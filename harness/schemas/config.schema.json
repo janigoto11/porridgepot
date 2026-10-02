@@ -1,0 +1,166 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "config.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "checks", "review", "productionDeployScript", "planner"],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "checks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["compile", "lint", "test", "synth"],
+      "properties": {
+        "compile": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["script", "reason"],
+          "properties": {
+            "script": {
+              "type": ["string", "null"]
+            },
+            "reason": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            }
+          }
+        },
+        "lint": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["script", "reason"],
+          "properties": {
+            "script": {
+              "type": ["string", "null"]
+            },
+            "reason": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            }
+          }
+        },
+        "test": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["script", "reason"],
+          "properties": {
+            "script": {
+              "type": ["string", "null"]
+            },
+            "reason": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            }
+          }
+        },
+        "synth": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["script", "reason"],
+          "properties": {
+            "script": {
+              "type": ["string", "null"]
+            },
+            "reason": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            }
+          }
+        }
+      }
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider", "model", "adapter"],
+      "properties": {
+        "provider": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "model": {
+          "type": ["string", "null"]
+        },
+        "adapter": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^(?!.*(?:^|/)\\.\\.(?:/|$))(?!/)[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "productionDeployScript": {
+      "type": ["string", "null"]
+    },
+    "planner": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "provider",
+        "model",
+        "adapter",
+        "maxOutputTokens",
+        "maxContextBytes",
+        "timeoutMs",
+        "contextPaths"
+      ],
+      "properties": {
+        "provider": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "model": {
+          "type": ["string", "null"]
+        },
+        "adapter": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^(?!.*(?:^|/)\\.\\.(?:/|$))(?!/)[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "maxOutputTokens": {
+          "type": "integer",
+          "minimum": 256,
+          "maximum": 16384
+        },
+        "maxContextBytes": {
+          "type": "integer",
+          "minimum": 10000,
+          "maximum": 1000000
+        },
+        "timeoutMs": {
+          "type": "integer",
+          "minimum": 1000,
+          "maximum": 180000
+        },
+        "contextPaths": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^(?!.*(?:^|/)\\.\\.(?:/|$))(?!/)[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*$"
+          }
+        }
+      }
+    }
+  }
+}

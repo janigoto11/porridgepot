@@ -1,0 +1,63 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "task.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "owner",
+    "description",
+    "spec",
+    "allowedPaths",
+    "acceptanceCriteria",
+    "dependsOn"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{0,39}$"
+    },
+    "owner": {
+      "type": "string",
+      "pattern": "^(?!.*(?:^|/)\\.\\.(?:/|$))(?!/)[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*$"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "spec": {
+      "type": "string",
+      "pattern": "^(?!.*(?:^|/)\\.\\.(?:/|$))(?!/)[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*$"
+    },
+    "allowedPaths": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^(?!.*(?:^|/)\\.\\.(?:/|$))(?!/)[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*$"
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "acceptanceCriteria": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "\\S"
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "dependsOn": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "\\S"
+      },
+      "minItems": 0,
+      "uniqueItems": true
+    }
+  }
+}

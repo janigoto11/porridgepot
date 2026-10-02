@@ -1,0 +1,68 @@
+name: Plan
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      spec:
+        description: Exact numbered specification path
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  select:
+    runs-on: ubuntu-latest
+    outputs:
+      specs: ${{ steps.select.outputs.specs }}
+      has-specs: ${{ steps.select.outputs.has-specs }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - id: select
+        run: node tools/select-specs.mjs
+        env:
+          SPEC_PATH: ${{ inputs.spec }}
+  plan:
+    needs: select
+    if: needs.select.outputs.has-specs == 'true' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      pull-requests: write
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        spec: ${{ fromJSON(needs.select.outputs.specs) }}
+    concurrency:
+      group: plan-${{ matrix.spec.id }}-${{ github.sha }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm install --global @anthropic-ai/claude-code@2.1.277
+      - run: npm run harness:validate
+      - run: npm run ai:plan
+        env:
+          SPEC_PATH: ${{ matrix.spec.path }}
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+      - run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          node tools/github-delivery.mjs publish-plan
+        env:
+          GH_TOKEN: ${{ github.token }}

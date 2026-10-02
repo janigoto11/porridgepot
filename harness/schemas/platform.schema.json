@@ -1,0 +1,84 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "platform.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "baseline",
+    "requiredPaths",
+    "forbiddenDependencies",
+    "forbiddenImports",
+    "sourceRoots"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "baseline": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["language", "runtime", "frontend", "infrastructure"],
+      "properties": {
+        "language": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "runtime": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "frontend": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "infrastructure": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        }
+      }
+    },
+    "requiredPaths": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^(?!.*(?:^|/)\\.\\.(?:/|$))(?!/)[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*$"
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    },
+    "forbiddenDependencies": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "\\S"
+      },
+      "minItems": 0,
+      "uniqueItems": true
+    },
+    "forbiddenImports": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "pattern": "\\S"
+      },
+      "minItems": 0,
+      "uniqueItems": true
+    },
+    "sourceRoots": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^(?!.*(?:^|/)\\.\\.(?:/|$))(?!/)[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*$"
+      },
+      "minItems": 1,
+      "uniqueItems": true
+    }
+  }
+}

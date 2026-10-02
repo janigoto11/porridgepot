@@ -1,0 +1,61 @@
+name: Deploy preview (CDK synth only)
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      commit:
+        description: Exact merged implementation commit
+        required: true
+        type: string
+      implementation_pr:
+        description: Merged implementation PR number
+        required: true
+        type: string
+permissions:
+  contents: read
+  pull-requests: read
+concurrency:
+  group: deploy-preview
+  cancel-in-progress: false
+jobs:
+  synth:
+    if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'implement/') && github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      AWS_EC2_METADATA_DISABLED: "true"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - id: target
+        run: node tools/github-delivery.mjs deploy-target
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TARGET_COMMIT: ${{ inputs.commit }}
+          IMPLEMENTATION_PR: ${{ inputs.implementation_pr }}
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.target.outputs.commit }}
+          persist-credentials: false
+      - run: npm ci
+      - run: npm run check
+      - run: |
+          echo '## CDK synth completed — no AWS deployment' >> "$GITHUB_STEP_SUMMARY"
+          echo "Commit: $TARGET_COMMIT" >> "$GITHUB_STEP_SUMMARY"
+        env:
+          TARGET_COMMIT: ${{ steps.target.outputs.commit }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: synth-${{ steps.target.outputs.commit }}
+          path: cdk.out/*.template.json
+          retention-days: 7

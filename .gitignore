@@ -1,0 +1,10 @@
+node_modules/
+dist/
+cdk.out/
+cdk-outputs.json
+.env
+.env.*
+!.env.example
+.ai/
+.DS_Store
+.idea/

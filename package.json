@@ -1,0 +1,44 @@
+{
+  "name": "porridgepot",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -k -n api,web \"node --watch tools/dev-api.mjs\" \"vite --config apps/web/vite.config.js\"",
+    "build": "vite build --config apps/web/vite.config.js && node tools/build-api.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "check": "node harness/cli.mjs check",
+    "synth": "cdk synth --quiet",
+    "deploy": "npm run build && cdk deploy --outputs-file cdk-outputs.json",
+    "seed": "node tools/seed-user.mjs",
+    "ai:plan": "node tools/plan.mjs",
+    "ai:dry-run": "node tools/dry-run.mjs",
+    "harness:validate": "node harness/cli.mjs validate",
+    "harness:check": "node harness/cli.mjs check",
+    "harness:review": "node harness/cli.mjs review",
+    "lint": "oxlint --deny-warnings . && npm run fmt:check",
+    "lint:fix": "oxlint --fix .",
+    "fmt": "oxfmt",
+    "fmt:check": "oxfmt --check"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.0.0",
+    "@aws-sdk/lib-dynamodb": "^3.0.0",
+    "aws-cdk-lib": "^2.0.0",
+    "constructs": "^10.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "ajv": "^8.20.0",
+    "aws-cdk": "^2.0.0",
+    "concurrently": "^9.0.0",
+    "esbuild": "^0.25.0",
+    "oxfmt": "0.71.0",
+    "oxlint": "1.86.0",
+    "vite": "^7.0.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
