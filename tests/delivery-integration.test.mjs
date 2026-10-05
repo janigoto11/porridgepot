@@ -118,6 +118,7 @@ else if (path === 'pulls') {
  state.prs.push(result);
 } else if (path.includes('/files?')) result = [{filename:'plans/0009-${base}.json',status:'added'}, {filename:'plans/0009-${base}.md',status:'added'}];
 else if (path === 'git/ref/heads/main') result = {object:{sha:git('ls-remote','origin','refs/heads/main').split(/\\s/)[0]}};
+else if (path === 'actions/workflows/ci.yml/dispatches') { (state.ciDispatches ??= []).push(JSON.parse(fs.readFileSync(0,'utf8'))); result = null; }
 else if (path.endsWith('/dispatches')) { state.dispatch = JSON.parse(fs.readFileSync(0,'utf8')); result = null; }
 else if (path === 'pulls/2') result = {...state.prs[1], merged:true,merge_commit_sha:state.prs[1].head.sha};
 else throw new Error('Unexpected API ' + path);
@@ -174,6 +175,10 @@ console.log(JSON.stringify({subtype:'success',structured_output}));
       run("tools/github-delivery.mjs", "publish-implementation", extra);
       const state = JSON.parse(readFileSync(join(sandbox, "state.json")));
       assert.equal(state.prs.length, 2);
+      assert.deepEqual(
+        state.ciDispatches,
+        state.prs.map((pr) => ({ ref: pr.head.ref, inputs: { commit: pr.head.sha } })),
+      );
       if (mode !== "frontend") {
         assert.equal(state.dispatch, undefined);
         assert.notEqual(

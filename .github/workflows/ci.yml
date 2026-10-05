@@ -1,8 +1,13 @@
 name: CI
 on:
   push:
-    branches: [main]
-  pull_request:
+    branches: ["**"]
+  workflow_dispatch:
+    inputs:
+      commit:
+        description: Exact commit at the selected branch tip
+        required: true
+        type: string
 permissions:
   contents: read
 jobs:
@@ -10,8 +15,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
+      - name: Verify dispatched revision
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          EXPECTED_SHA: ${{ inputs.commit }}
+          ACTUAL_SHA: ${{ github.sha }}
+        run: |
+          node -e 'const {EXPECTED_SHA, ACTUAL_SHA} = process.env; if (!/^[a-f0-9]{40}$/.test(EXPECTED_SHA || "") || EXPECTED_SHA !== ACTUAL_SHA) throw new Error("Branch moved or invalid commit: dispatch CI again for the current branch tip");'
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.sha }}
           persist-credentials: false
       - uses: actions/setup-node@v4
         with:

@@ -12,6 +12,10 @@ const api = (path, method = "GET", data) =>
       { input: data ? JSON.stringify(data) : undefined, encoding: "utf8" },
     ) || "null",
   );
+function dispatchCI(branch, commit) {
+  api("actions/workflows/ci.yml/dispatches", "POST", { ref: branch, inputs: { commit } });
+  appendFileSync(process.env.GITHUB_STEP_SUMMARY, `CI dispatched for ${commit} on ${branch}.\n`);
+}
 const output = (key, value) => appendFileSync(process.env.GITHUB_OUTPUT, `${key}=${value}\n`);
 const push = (ref) => {
   // Credential exists only for this process, never in .git/config or model environment.
@@ -84,6 +88,7 @@ if (command === "publish-plan") {
     body: `Review the Markdown plan and JSON contract. Merge starts implementation.\n\nSpec: ${plan.spec}\nBase: ${plan.baseCommit}`,
   });
   appendFileSync(process.env.GITHUB_STEP_SUMMARY, `Plan PR: ${pr.html_url}\n`);
+  dispatchCI(branch, git("rev-parse", "HEAD"));
 } else if (command === "prepare") {
   const event = JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, "utf8"));
   const pr = mergedPR(event, "plan/");
@@ -127,6 +132,7 @@ if (command === "publish-plan") {
     body: `Plan: ${process.env.PLAN_PATH}\n\nDeterministic checks and AI review passed for ${head}.\n\n${review.summary}\n\nAutomatic frontend rule: ${eligible ? "eligible" : "human merge required"}.\n\nEvidence: https://github.com/${repo}/actions/runs/${process.env.GITHUB_RUN_ID}`,
   });
   appendFileSync(process.env.GITHUB_STEP_SUMMARY, `Implementation PR: ${pr.html_url}\n`);
+  dispatchCI(branch, head);
   if (eligible && api("git/ref/heads/main").object.sha === base) {
     // Fast-forward only: a concurrent main change makes the push fail, never overwrites it.
     git("merge-base", "--is-ancestor", base, head);
