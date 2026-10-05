@@ -1,0 +1,113 @@
+{
+  "schemaVersion": 1,
+  "id": "0003",
+  "spec": "specs/0003-shopping-lists.md",
+  "specDigest": "c4c991c34cd5113409270bfc555796c3915ccf5181f07c2df3db7894333490ba",
+  "baseCommit": "dd1c2306704114ae94977c04196c48ca3786160c",
+  "planner": {
+    "provider": "claude-code",
+    "model": "opus"
+  },
+  "tasks": [
+    {
+      "id": "api-shopping-lists",
+      "owner": "apps/api",
+      "description": "Lisää ostoslistojen taustapalvelurajapinta olemassa olevaan Lambda-käsittelijään. Toteuta istunnolla suojatut päätepisteet GET /api/lists, POST /api/lists, PUT /api/lists/{id} ja DELETE /api/lists/{id} sekä niiden tallennus nykyiseen DynamoDB-tauluun ilman infrataulun rakenteen muutoksia: kaikki kirjautuneen käyttäjän listat talletetaan yhteen tietueeseen avaimella LISTS#<username>, jonka kentässä lists on taulukko muotoa { id, name, items: [{ id, text }], updatedAt }. Laajenna store.mjs-moduulin muistitoteutusta ja DynamoDB-toteutusta vain siltä osin kuin päätepisteet vaativat ja käytä samaa istuntotarkistusta kuin /api/me.",
+      "spec": "specs/0003-shopping-lists.md",
+      "allowedPaths": [
+        "apps/api"
+      ],
+      "acceptanceCriteria": [
+        "GET /api/lists palauttaa kirjautuneelle käyttäjälle hänen omat listansa muodossa { lists: [...] } ja ilman voimassa olevaa istuntoevästettä vastaus on 401.",
+        "POST /api/lists luo uuden tyhjän listan oletusnimellä, palauttaa luodun listan tunnisteen ja nimen, eikä se koskaan palauta toisen käyttäjän listoja.",
+        "PUT /api/lists/{id} korvaa listan nimen ja rivit yhdellä pyynnöllä (automaattinen tallennus ilman erillistä tallennuspäätepistettä) ja palauttaa päivitetyn listan; tuntematon tunniste tuottaa 404.",
+        "DELETE /api/lists/{id} poistaa vain kutsujan oman listan ja palauttaa onnistumisvastauksen; tuntematon tunniste tuottaa 404.",
+        "Syötteet validoidaan: ei-JSON-sisältötyyppi tuottaa 415, virheellinen JSON tai liian pitkä nimi/rivimäärä tuottaa 400 ja liian suuri runko 413; virheilmoitukset ovat suomenkielisiä kuten nykyisissä päätepisteissä.",
+        "store.mjs tarjoaa ostoslistojen luku- ja kirjoitusoperaatiot sekä DynamoDB- että memoryStore-toteutuksessa eikä olemassa olevien kirjautumispäätepisteiden toiminta muutu."
+      ],
+      "dependsOn": []
+    },
+    {
+      "id": "web-shopping-lists-view",
+      "owner": "apps/web/src/shoppingLists.jsx",
+      "description": "Toteuta ostoslistanäkymä omana React-komponenttina tiedostoon apps/web/src/shoppingLists.jsx ja siirrä HTTP-apufunktio omaan moduuliin apps/web/src/api.js, jota sekä uusi näkymä että sovelluksen juuri voivat käyttää. Näkymässä on listaustila (olemassa olevat listat tietokannasta, uuden listan luonti, muokkaus ja poisto) ja muokkaustila (listan nimen muokkaus, rivien lisäys, jokaisen rivin perässä X-painike rivin poistoon ja paluu listaukseen). Muutokset tallennetaan automaattisesti rajapintaan ilman erillistä tallennuspainiketta.",
+      "spec": "specs/0003-shopping-lists.md",
+      "allowedPaths": [
+        "apps/web/src/shoppingLists.jsx",
+        "apps/web/src/api.js"
+      ],
+      "acceptanceCriteria": [
+        "apps/web/src/api.js vie uudelleenkäytettävän pyyntöapurin, joka tukee GET-, POST-, PUT- ja DELETE-metodeja, lähettää evästeet same-origin-periaatteella ja heittää virheen palvelimen viestillä, kun vastaus ei ole ok.",
+        "shoppingLists.jsx hakee listat GET /api/lists -kutsulla näkymän avauksessa ja näyttää lataus- sekä virhetilan suomenkielisesti.",
+        "Listausnäkymästä voi luoda uuden listan, avata olemassa olevan muokkaukseen ja poistaa listan; poisto päivittää näkyvän listauksen.",
+        "Muokkausnäkymässä listan nimi on muokattavissa ja jokaisella rivillä on X-painike, jolla rivi poistetaan listalta; painikkeella on saavutettava aria-label.",
+        "Nimen ja rivien muutokset tallentuvat automaattisesti PUT /api/lists/{id} -kutsulla ilman erillistä tallennuspainiketta, ja peräkkäiset näppäilyt niputetaan viiveellä yhteen pyyntöön.",
+        "Muokkausnäkymässä on painike, jolla käyttäjä palaa listojen listaukseen.",
+        "Komponentti ei sisällä omaa fetch-toteutusta vaan käyttää apps/web/src/api.js-moduulia."
+      ],
+      "dependsOn": [
+        "api-shopping-lists"
+      ]
+    },
+    {
+      "id": "web-tabs",
+      "owner": "apps/web/src/main.jsx",
+      "description": "Lisää sovelluksen pääsivulle välilehtinavigaatio: nykyinen sisältö siirtyy välilehdelle \"Koti\" (Home) ja uusi välilehti on \"Ostoslistat\" (Shopping lists), joka renderöi apps/web/src/shoppingLists.jsx -komponentin. Koti-välilehti on aktiivinen heti kirjautumisen jälkeen. Välilehdet näytetään vain kirjautuneelle käyttäjälle, ja kirjautumislomake säilyy nykyisellään. Siirrä fetch-apuri käyttämään apps/web/src/api.js-moduulia ja lisää välilehtien sekä ostoslistojen tyylit tiedostoon apps/web/src/style.css nykyistä väripalettia noudattaen.",
+      "spec": "specs/0003-shopping-lists.md",
+      "allowedPaths": [
+        "apps/web/src/main.jsx",
+        "apps/web/src/style.css"
+      ],
+      "acceptanceCriteria": [
+        "Kirjautuneelle käyttäjälle näkyy kaksi välilehteä, \"Koti\" ja \"Ostoslistat\", ja välilehtien vaihto vaihtaa näkyvän sisällön ilman sivun uudelleenlatausta.",
+        "Kirjautumisen jälkeen sekä sivun latauksen jälkeen aktiivinen välilehti on \"Koti\".",
+        "\"Ostoslistat\"-välilehti renderöi apps/web/src/shoppingLists.jsx -komponentin, ja \"Koti\"-välilehti näyttää nykyisen tervetulosisällön muuttumattomana.",
+        "Välilehdet on toteutettu saavutettavasti (esimerkiksi role=\"tablist\"/role=\"tab\" ja aria-selected) ja aktiivinen välilehti erottuu visuaalisesti style.css-tyyleillä.",
+        "main.jsx käyttää apps/web/src/api.js-moduulia eikä sisällä omaa päällekkäistä fetch-apufunktiota, ja uloskirjautumisvalikko toimii kuten ennen.",
+        "Uudet tyylit lisätään style.css-tiedostoon olemassa olevia tyylejä rikkomatta ja nykyistä väripalettia käyttäen."
+      ],
+      "dependsOn": [
+        "web-shopping-lists-view"
+      ]
+    },
+    {
+      "id": "tests-shopping-lists",
+      "owner": "tests/shopping-lists.test.mjs",
+      "description": "Lisää node:test-testit ostoslistojen rajapinnalle tiedostoon tests/shopping-lists.test.mjs. Testit käyttävät createHandler-funktiota memoryStore-tallennuksen kanssa samaan tapaan kuin tests/auth.test.mjs, eivät tee verkkokutsuja eivätkä kutsu mitään mallipalvelua.",
+      "spec": "specs/0003-shopping-lists.md",
+      "allowedPaths": [
+        "tests/shopping-lists.test.mjs"
+      ],
+      "acceptanceCriteria": [
+        "Testit kattavat listojen haun, luonnin, päivityksen (nimi ja rivit) sekä poiston kirjautuneella istunnolla.",
+        "Testi varmistaa, että kaikki ostoslistojen päätepisteet palauttavat 401 ilman voimassa olevaa istuntoevästettä ja vanhentuneella istunnolla.",
+        "Testi varmistaa, että käyttäjä ei näe eikä voi muokata tai poistaa toisen käyttäjän listaa (404 tai 401, ei vuotoa toisen käyttäjän tietoihin).",
+        "Testi varmistaa validointivastaukset: virheellinen JSON tai liian pitkä nimi/rivimäärä tuottaa 400, väärä sisältötyyppi 415 ja liian suuri runko 413.",
+        "Testit käyttävät vain memoryStore-tallennusta ja injektoitua now-funktiota, eivätkä ne käytä verkkoa, AWS-palveluita tai malliadaptereita.",
+        "Testitiedosto noudattaa nimeämistä tests/*.test.mjs, jotta npm test löytää sen."
+      ],
+      "dependsOn": [
+        "api-shopping-lists"
+      ]
+    },
+    {
+      "id": "docs-shopping-lists",
+      "owner": "docs/architecture.md",
+      "description": "Päivitä docs/architecture.md kuvaamaan ostoslistojen rajapinta ja tietomalli: uudet päätepisteet /api/lists ja /api/lists/{id}, istuntopohjainen suojaus, käyttäjäkohtainen tietue LISTS#<username> samassa DynamoDB-taulussa ilman infrarakenteen muutoksia sekä frontendin välilehtirakenne (Koti ja Ostoslistat) ja automaattinen tallennus.",
+      "spec": "specs/0003-shopping-lists.md",
+      "allowedPaths": [
+        "docs/architecture.md"
+      ],
+      "acceptanceCriteria": [
+        "Dokumentissa luetellaan ostoslistojen päätepisteet ja todetaan, että ne vaativat voimassa olevan istuntoevästeen.",
+        "Dokumentissa kuvataan tietomalli LISTS#<username> ja perustellaan, miksi nykyinen yhden osioavaimen taulu riittää eikä infrakoodia muuteta.",
+        "Dokumentissa mainitaan frontendin välilehdet Koti ja Ostoslistat sekä automaattinen tallennus ilman erillistä tallennuspainiketta.",
+        "Olemassa oleva arkkitehtuuri- ja AI-SDLC-sisältö säilyy, eikä dokumenttiin lisätä infra- tai työnkulkumuutoksia koskevia väitteitä."
+      ],
+      "dependsOn": [
+        "api-shopping-lists",
+        "web-tabs"
+      ]
+    }
+  ]
+}
