@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "id": "0004",
+  "spec": "specs/0004-shopping-list-tab-name.md",
+  "specDigest": "485360809c7290da6c443d46a007a49c55357c342a9050a30502bf0698e58006",
+  "baseCommit": "2a75342c6391c589681b54c8590f0f382da81ffb",
+  "planner": {
+    "provider": "claude-code",
+    "model": "opus"
+  },
+  "tasks": [
+    {
+      "id": "tab-label",
+      "owner": "apps/web/src/main.jsx",
+      "description": "Vaihda kirjautuneen käyttäjän välilehtivalikossa ostoslistojen välilehden nimi muodosta \"Ostoslistat\" muotoon \"Omat ostoslistat\". Muutos tehdään TABS-listan lists-välilehden label-arvoon. Välilehden tunniste (id \"lists\"), järjestys, Koti-välilehti, oletusvälilehti ja kaikki muu toiminnallisuus pysyvät ennallaan.",
+      "spec": "specs/0004-shopping-list-tab-name.md",
+      "allowedPaths": [
+        "apps/web/src/main.jsx"
+      ],
+      "acceptanceCriteria": [
+        "TABS-määrittelyssä välilehden id \"lists\" label on täsmälleen \"Omat ostoslistat\".",
+        "Merkkijonoa \"Ostoslistat\" ei esiinny enää apps/web/src/main.jsx-tiedostossa.",
+        "Välilehtien id-arvot (\"home\", \"lists\"), järjestys ja Koti-välilehden label \"Koti\" ovat muuttumattomat.",
+        "Oletusvälilehti on edelleen Koti sekä sivun latauksessa että kirjautumisen jälkeen, eikä välilehtien vaihtologiikkaa, aria-attribuutteja tai muita komponentteja muuteta.",
+        "Muutos koskee vain apps/web/src/main.jsx-tiedostoa; backend- tai infra-tiedostoihin ei kosketa."
+      ],
+      "dependsOn": []
+    },
+    {
+      "id": "docs-tab-name",
+      "owner": "docs/architecture.md",
+      "description": "Päivitä arkkitehtuuridokumentin frontend-kuvaus vastaamaan uutta välilehden nimeä: kahden välilehden kuvauksessa ostoslistojen välilehti on \"Omat ostoslistat\" (Koti pysyy ennallaan). Muuta vain kyseinen nimimaininta, älä muuta API- tai tietomallikuvauksia.",
+      "spec": "specs/0004-shopping-list-tab-name.md",
+      "allowedPaths": [
+        "docs/architecture.md"
+      ],
+      "acceptanceCriteria": [
+        "docs/architecture.md kuvaa ostoslistojen välilehden nimellä \"Omat ostoslistat\".",
+        "Dokumentissa ei enää viitata ostoslistojen välilehteen nimellä \"Ostoslistat\".",
+        "Koti-välilehden kuvaus ja maininta Koti-välilehdestä oletuksena säilyvät.",
+        "Muut dokumentin osiot (API-päätepisteet, DynamoDB-avaimet, AI SDLC -osio) pysyvät sisällöllisesti muuttumattomina."
+      ],
+      "dependsOn": [
+        "tab-label"
+      ]
+    }
+  ]
+}
