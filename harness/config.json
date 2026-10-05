@@ -41,5 +41,8 @@
       "docs/architecture.md",
       "harness/rules"
     ]
+  },
+  "implementation": {
+    "timeoutMs": 600000
   }
 }

@@ -10,6 +10,7 @@ import {
   taskOrder,
   renderPlan,
 } from "../harness/lib/delivery.mjs";
+import { validate } from "../harness/lib/validate.mjs";
 import { ask, describeFailure } from "../harness/adapters/claude-code.mjs";
 test("frontend gate requires a nonempty exact directory boundary, including deleted/renamed paths", () => {
   assert.equal(frontendOnly(["apps/web/src/main.jsx"]), true);
@@ -140,4 +141,13 @@ test("Claude failures provide safe diagnostics without leaking provider output",
   assert.match(describeFailure({ code: "ETIMEDOUT" }), /timed out/);
   assert.match(describeFailure({ stdout: JSON.stringify({ api_error_status: 429 }) }), /429/);
   assert.match(describeFailure({ status: 2, stderr: secret }), /status 2/);
+});
+
+test("implementation timeout is configurable and bounded independently of planning", () => {
+  const config = JSON.parse(readFileSync("harness/config.json", "utf8"));
+  validate("config", config);
+  for (const timeoutMs of [0, -1, 900001, "600000"]) {
+    assert.throws(() => validate("config", { ...config, implementation: { timeoutMs } }));
+  }
+  validate("config", { ...config, implementation: { timeoutMs: 12000 } });
 });

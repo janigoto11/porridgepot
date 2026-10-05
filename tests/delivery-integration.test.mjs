@@ -14,7 +14,7 @@ import { join, resolve } from "node:path";
 import { execFileSync, spawnSync } from "node:child_process";
 import { digest } from "../harness/lib/specs.mjs";
 
-for (const mode of ["frontend", "backend", "stale-main"])
+for (const mode of ["frontend", "backend", "stale-main", "timeout"])
   test(`mocked Git delivery: ${mode}`, () => {
     const area = mode === "backend" ? "apps/api" : "apps/web";
     const changedPath = `${area}/message.js`;
@@ -68,6 +68,7 @@ for (const mode of ["frontend", "backend", "stale-main"])
       put("specs/0009-demo.md", "# Demo\nChange the message to After.\n");
       const config = JSON.parse(readFileSync("harness/config.json"));
       config.planner.contextPaths = ["apps"];
+      config.implementation.timeoutMs = mode === "timeout" ? 1000 : 12000;
       put("harness/config.json", config);
       for (const path of [
         "package.json",
@@ -133,7 +134,8 @@ if(result !== null) console.log(JSON.stringify(result));
 const fs = require('node:fs');
 const data = JSON.parse(fs.readFileSync(0,'utf8'));
 const structured_output = data.task ? {summary:'Changed message',files:[{path:${JSON.stringify(changedPath)},content:'export const message = "After";\\n'}]} : {verdict:'pass',summary:'Matches plan',findings:[]};
-console.log(JSON.stringify({subtype:'success',structured_output}));
+if (${JSON.stringify(mode)} === 'timeout') setTimeout(() => {}, 5000);
+else console.log(JSON.stringify({subtype:'success',structured_output}));
 `,
         { mode: 0o755 },
       );
@@ -157,7 +159,35 @@ console.log(JSON.stringify({subtype:'success',structured_output}));
       );
       run("tools/github-delivery.mjs", "prepare");
       const extra = { PLAN_PATH: `plans/0009-${base}.json`, BASE_SHA: merge };
+      if (mode === "timeout") {
+        const result = spawnSync(process.execPath, [resolve("tools/implement.mjs")], {
+          cwd: root,
+          encoding: "utf8",
+          env: { ...env, ...extra },
+        });
+        assert.notEqual(result.status, 0);
+        assert.match(result.stderr, /Claude Code timed out/);
+        const progress = JSON.parse(readFileSync(join(root, ".ai/implementation-progress.json")));
+        assert.deepEqual(
+          progress.events.map((e) => [e.task, e.status, e.timeoutMs]),
+          [
+            ["text", "started", 1000],
+            ["text", "failed", 1000],
+          ],
+        );
+        assert.equal(git("rev-parse", "HEAD"), merge);
+        assert.equal(git("status", "--porcelain"), "");
+        return;
+      }
       run("tools/implement.mjs", null, extra);
+      const progress = JSON.parse(readFileSync(join(root, ".ai/implementation-progress.json")));
+      assert.deepEqual(
+        progress.events.map((e) => [e.status, e.timeoutMs]),
+        [
+          ["started", 12000],
+          ["completed", 12000],
+        ],
+      );
       assert.match(readFileSync(join(root, changedPath), "utf8"), /After/);
       put(".ai/gates.json", { status: "passed", gates: [] });
       run("tools/review-implementation.mjs", null, extra);

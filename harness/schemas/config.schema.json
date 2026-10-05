@@ -3,7 +3,14 @@
   "$id": "config.schema.json",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schemaVersion", "checks", "review", "productionDeployScript", "planner"],
+  "required": [
+    "schemaVersion",
+    "checks",
+    "review",
+    "productionDeployScript",
+    "planner",
+    "implementation"
+  ],
   "properties": {
     "schemaVersion": {
       "const": 1
@@ -159,6 +166,18 @@
             "type": "string",
             "pattern": "^(?!.*(?:^|/)\\.\\.(?:/|$))(?!/)[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*$"
           }
+        }
+      }
+    },
+    "implementation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["timeoutMs"],
+      "properties": {
+        "timeoutMs": {
+          "type": "integer",
+          "minimum": 1000,
+          "maximum": 900000
         }
       }
     }

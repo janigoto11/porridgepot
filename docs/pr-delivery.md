@@ -28,7 +28,7 @@ Jos muutos koskee muitakin hakemistoja tai main on edennyt, PR jää ihmisen yhd
 
 ## Rajat ja kehittäminen
 
-Tämä on pieniä muutoksia varten rajattu ensimmäinen toteutus. Agentti saa enintään 250 KB kontekstin, kolme mallivuoroa ja kolmen minuutin aikarajan kutsua kohti. Enintään kahdeksan tehtävää ajetaan sarjassa. CLI toimii ilman työkaluja tai MCP:tä erillisessä tilapäishakemistossa; se saa vain harnessin välittämän tekstikontekstin. Automaattisia korjaussilmukoita ei ole.
+Tämä on pieniä muutoksia varten rajattu ensimmäinen toteutus. Agentti saa enintään 250 KB kontekstin, kolme mallivuoroa ja vaihekohtaisen aikarajan kutsua kohti. Enintään kahdeksan tehtävää ajetaan sarjassa. CLI toimii ilman työkaluja tai MCP:tä erillisessä tilapäishakemistossa; se saa vain harnessin välittämän tekstikontekstin. Automaattisia korjaussilmukoita ei ole.
 
 Toteuttaja voi muuttaa vain apps/, infra/, tests/ ja docs/-tiedostoja planin allowedPaths-rajojen sisällä. Harnessin, workflow'iden, speksien, planien ja riippuvuuksien muuttaminen tehdään tässä versiossa käsin. Tämä estää myös agenttia muuttamasta omia porttejaan. Agentin tuottamaa sovelluskoodia suoritetaan build/test-vaiheessa tavallisella GitHub-runnerilla: tämä ei ole vihamielisen koodin hiekkalaatikko.
 
@@ -49,3 +49,11 @@ OAuth-tunnistautuminen ei toimi Claude Coden --bare-tilassa. Adapteri käyttää
 Botin PR:n luoja lähettää CI:lle lähdehaaran ja sen commit-SHA:n. CI varmistaa, että dispatchin GitHub SHA vastaa annettua committia, ja checkout käyttää tätä muuttumatonta SHA:ta. Jos haara ehti liikkua, ajo pysähtyy eikä esitä uudempaa koodia aiemmin tarkistettuna. CI:n check liittyy lähdehaaran committiin, ei mainiin. CI tarkistaa haaran version; se ei muodosta PR:n virtuaalista merge-committia.
 
 Käsin uusinta: Actions → CI → Run workflow, valitse PR:n lähdehaara ja anna sen nykyinen täysi commit-SHA. Tämä ei kutsu Claudea. Dispatch-virhe pysäyttää PR:n julkaisuvaiheen ennen automergeä; jo avattu PR säilyy. Implementin oma check + AI-review on edelleen automergen portti; erillinen CI on rinnakkainen tarkistus.
+
+## Toteutuksen aikarajat ja virhetilanteet
+
+`harness/config.json`-tiedoston `implementation.timeoutMs` määrää toteuttajan kutsukohtaisen aikarajan (oletus 600000 ms eli 10 minuuttia, sallittu 1–900 sekuntia). Plannerin timeoutMs ja katselmoinnin kolmen minuutin oletus ovat erillisiä. Implement-jobin kokonaisraja on edelleen 45 minuuttia, joten pitkien tehtävien yhteiskesto voi saavuttaa sen ennen yksittäisten rajojen summaa.
+
+Lokissa näkyy tehtävän id ja käytettävä aikaraja. `.ai/implementation-progress.json` sisältää tehtävien aloitukset, valmistumiset tai virheen ja keston. Raportti sisältyy implementation-evidence-artefaktiin myös kutsun epäonnistuessa. Se ei sisällä tunnuksia tai mallin raakaa vastausta. Automaattisia maksullisia uusintayrityksiä ei tehdä eikä raportti ole toteutuksen jatkopiste.
+
+Vanhan GitHub-ajon Re-run käyttää vanhan commitin koodia ja aikarajaa. Kun korjaus on mainissa, nykyinen tiukka lähtöcommit-tarkistus edellyttää uuden planin generointia nykyisestä mainista (Plan → Run workflow → sama speksipolku) ja sen PR:n mergeä. Uudelleensuunnittelu käyttää mallipalvelua; älä mergeä vanhaa, korjausta edeltävää plania uudestaan.
