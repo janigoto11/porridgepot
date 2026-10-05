@@ -7,7 +7,7 @@ import "./style.css";
 const HOME_TAB = "home";
 const TABS = [
   { id: HOME_TAB, label: "Koti" },
-  { id: "lists", label: "Ostoslistat" },
+  { id: "lists", label: "Omat ostoslistat" },
 ];
 
 function Tabs({ active, onSelect }) {

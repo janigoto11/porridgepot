@@ -43,8 +43,8 @@ number of lists, items and text lengths keep the item comfortably below the Dyna
 item size limit. Infrastructure code is therefore unchanged. The lists item has no
 expiresAt attribute, so the session TTL does not remove it.
 
-The frontend shows two tabs to a signed-in user, Koti (Home) and Ostoslistat
-(Shopping lists); Koti is active after sign-in and on page load. The shopping list
+The frontend shows two tabs to a signed-in user, Koti (Home) and Omat ostoslistat
+(My shopping lists); Koti is active after sign-in and on page load. The shopping list
 view has a listing mode (create, open and delete lists) and an editing mode (edit the
 name, add rows, remove a row with the X button next to it, and return to the listing).
 There is no save button: edits are stored automatically with PUT /api/lists/{id}, and
