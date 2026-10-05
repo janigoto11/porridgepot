@@ -151,7 +151,7 @@ function App() {
             >
               {tab === HOME_TAB ? (
                 <>
-                  <h1>Welcome to the Porridge Pot</h1>
+                  <h1>Tervetuloa Porridge Pot -testipalveluun</h1>
                   <p>Tervetuloa, {user.username}. Tästä rakennamme seuraavan idean.</p>
                 </>
               ) : (
