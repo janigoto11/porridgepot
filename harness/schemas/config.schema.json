@@ -178,6 +178,11 @@
           "type": "integer",
           "minimum": 1000,
           "maximum": 900000
+        },
+        "maxRepairAttempts": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 2
         }
       }
     }

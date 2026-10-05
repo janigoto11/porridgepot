@@ -22,13 +22,13 @@ Jos muutos koskee muitakin hakemistoja tai main on edennyt, PR jää ihmisen yhd
 - Repo voi olla private ja tili Free. Environmentteja tai haarasuojauksia ei edellytetä.
 - Settings → Actions → General → Workflow permissions: salli **Allow GitHub Actions to create and approve pull requests**. Workflow-kohtaiset contents/pull-requests/actions-oikeudet on määritelty YAMLissa.
 - Lisää myöhemmin repository secretiin `CLAUDE_CODE_OAUTH_TOKEN`. Token luodaan Claude Coden `claude setup-token` -komennolla. Älä laita tokenia tiedostoihin, PR:ään tai chattiin.
-- Workflows asentavat lukitun Claude Code CLI -version 2.1.277. Planner, toteuttaja ja katselmoija käyttävät samaa CLI-adapteria ja `sonnet`-mallialiasia. Alias voidaan korvata täsmällisellä mallilla harness/config.jsonissa.
+- Workflows asentavat lukitun Claude Code CLI -version 2.1.277. Planner, toteuttaja, korjaaja ja katselmoija käyttävät samaa CLI-adapteria ja `opus`-mallialiasia. Alias voidaan korvata täsmällisellä mallilla harness/config.jsonissa.
 - Aiempi Anthropic API -adapteri on säilytetty vaihtoehtona plannerille. OAuth-token ei ole ANTHROPIC_API_KEY. Nykyiset workflow't välittävät vain OAuth-tokenin.
 - CI ei kuuntele pull_request-tapahtumaa, joten botin PR ei synnytä hyväksyntää odottavaa CI-ajoa. Ihmisen haarapush tarkistetaan ilman PR:ääkin. Pelkkä PR:n avaaminen/uudelleenavaaminen tai kohdehaaran vaihtaminen ei aja CI:tä uudelleen, eikä ulkoisen forkin push kuulu tämän repon CI:hin. Tämä malli on tarkoitettu nykyiselle saman repon kehitykselle.
 
 ## Rajat ja kehittäminen
 
-Tämä on pieniä muutoksia varten rajattu ensimmäinen toteutus. Agentti saa enintään 250 KB kontekstin, kolme mallivuoroa ja vaihekohtaisen aikarajan kutsua kohti. Enintään kahdeksan tehtävää ajetaan sarjassa. CLI toimii ilman työkaluja tai MCP:tä erillisessä tilapäishakemistossa; se saa vain harnessin välittämän tekstikontekstin. Automaattisia korjaussilmukoita ei ole.
+Tämä on pieniä muutoksia varten rajattu ensimmäinen toteutus. Agentti saa enintään 250 KB kontekstin, kolme mallivuoroa ja vaihekohtaisen aikarajan kutsua kohti. Enintään kahdeksan tehtävää ajetaan sarjassa. CLI toimii ilman työkaluja tai MCP:tä erillisessä tilapäishakemistossa; se saa vain harnessin välittämän tekstikontekstin. Deterministisen tarkistuksen epäonnistuessa tehdään enintään kaksi rajattua korjauskierrosta.
 
 Toteuttaja voi muuttaa vain apps/, infra/, tests/ ja docs/-tiedostoja planin allowedPaths-rajojen sisällä. Harnessin, workflow'iden, speksien, planien ja riippuvuuksien muuttaminen tehdään tässä versiossa käsin. Tämä estää myös agenttia muuttamasta omia porttejaan. Agentin tuottamaa sovelluskoodia suoritetaan build/test-vaiheessa tavallisella GitHub-runnerilla: tämä ei ole vihamielisen koodin hiekkalaatikko.
 
@@ -54,6 +54,16 @@ Käsin uusinta: Actions → CI → Run workflow, valitse PR:n lähdehaara ja ann
 
 `harness/config.json`-tiedoston `implementation.timeoutMs` määrää toteuttajan kutsukohtaisen aikarajan (oletus 600000 ms eli 10 minuuttia, sallittu 1–900 sekuntia). Plannerin timeoutMs ja katselmoinnin kolmen minuutin oletus ovat erillisiä. Implement-jobin kokonaisraja on edelleen 45 minuuttia, joten pitkien tehtävien yhteiskesto voi saavuttaa sen ennen yksittäisten rajojen summaa.
 
-Lokissa näkyy tehtävän id ja käytettävä aikaraja. `.ai/implementation-progress.json` sisältää tehtävien aloitukset, valmistumiset tai virheen ja keston. Raportti sisältyy implementation-evidence-artefaktiin myös kutsun epäonnistuessa. Se ei sisällä tunnuksia tai mallin raakaa vastausta. Automaattisia maksullisia uusintayrityksiä ei tehdä eikä raportti ole toteutuksen jatkopiste.
+Lokissa näkyy tehtävän id ja käytettävä aikaraja. `.ai/implementation-progress.json` sisältää tehtävien aloitukset, valmistumiset tai virheen ja keston. Raportti sisältyy implementation-evidence-artefaktiin myös kutsun epäonnistuessa. Se ei sisällä tunnuksia tai mallin raakaa vastausta. Mallikutsun virhettä tai aikakatkaisua ei yritetä automaattisesti uudelleen. Deterministisen tarkistuksen virhe voi käynnistää alla kuvatun korjauskutsun. Raportti ei ole automaattinen jatkopiste.
 
 Vanhan GitHub-ajon Re-run käyttää vanhan commitin koodia ja aikarajaa. Kun korjaus on mainissa, nykyinen tiukka lähtöcommit-tarkistus edellyttää uuden planin generointia nykyisestä mainista (Plan → Run workflow → sama speksipolku) ja sen PR:n mergeä. Uudelleensuunnittelu käyttää mallipalvelua; älä mergeä vanhaa, korjausta edeltävää plania uudestaan.
+
+## Rajatut korjauskierrokset ja lähdekoodin talteenotto
+
+Implement käyttää `tools/check-implementation.mjs`-ohjainta: ensin `npm run check`, sitten tarvittaessa Claude-korjaus ja koko tarkistus uudestaan. `implementation.maxRepairAttempts` on oletuksena 2 (sallittu 0–2; 0 poistaa korjaukset). Onnistunut ensimmäinen tarkistus ei kutsu mallia. Korjaaja saa hyväksytyn planin, nykyisen lähdekoodin, porttiraportin ja lokin viimeiset 64000 merkkiä. Se käyttää toteuttajan mallia ja aikarajaa. Sallitut polut ovat planin tehtävien yhdistelmä; harnessin tai tarkistussääntöjen muuttaminen ei ole sallittua. Jokainen korjaus commitoidaan ennen uutta tarkistusta. AI-review ja julkaisu alkavat vasta kaikkien porttien läpäisyn jälkeen.
+
+Korjauskutsut kuluttavat Claude-kiintiötä. Mallivirhe, tyhjä korjaus tai kielletty tiedostopolku pysäyttää ajon. Tarkistuksen prosessivirhettä tai 10 minuutin aikakatkaisua ei lähetetä korjaajalle. Jobin 45 minuutin kokonaisraja säilyy. Tarkistusprosessi ei saa Claude- tai GitHub-tokenia ympäristömuuttujana.
+
+`implementation-evidence-*`-artefakti sisältää `check-0.log`-alkuiset tarkistuslokit, kierroskohtaiset `gates-*.json`-raportit ja `repair-progress.json`-tapahtumat. Erillinen aina ajettava tallennusvaihe säilyttää myös epäonnistuessa `implementation.patch`-muutokset (apps/infra/tests/docs, myös keskeneräiset seuratut muutokset), uusien vielä seuraamattomien tiedostojen sisällöt `untracked/`-hakemistossa sekä lähtöcommitin `source-state.json`-tiedostossa. Säilytys on 7 päivää. Runnerin pakkopysäytys voi estää artefaktin tallennuksen.
+
+Palautus tutkittavaksi: luo erillinen checkout `source-state.json`-tiedoston baseCommitista, sovella `git apply implementation.patch` ja kopioi mahdollinen `untracked/`-sisältö samoihin suhteellisiin polkuihin. Tämä palauttaa lähdekoodin, ei commit-historiaa eikä automaattisesti jatkuvaa workflow-ajoa.

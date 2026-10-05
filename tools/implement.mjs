@@ -1,3 +1,4 @@
+import { fileResponseSchema } from "../harness/lib/file-response.mjs";
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { ask } from "../harness/adapters/claude-code.mjs";
@@ -43,25 +44,7 @@ for (const task of taskOrder(plan.tasks)) {
       model: config.planner.model,
       prompt: readFileSync("harness/prompts/implementer.md", "utf8"),
       data: { plan, task, sourceContext, spec: readSpec(plan.spec) },
-      schema: {
-        type: "object",
-        additionalProperties: false,
-        required: ["summary", "files"],
-        properties: {
-          summary: { type: "string" },
-          files: {
-            type: "array",
-            minItems: 1,
-            maxItems: 20,
-            items: {
-              type: "object",
-              additionalProperties: false,
-              required: ["path", "content"],
-              properties: { path: { type: "string" }, content: { type: ["string", "null"] } },
-            },
-          },
-        },
-      },
+      schema: fileResponseSchema,
     });
     applyFiles(result.files, task.allowedPaths);
     const written = result.files.filter((f) => f.content !== null).map((f) => f.path);

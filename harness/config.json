@@ -26,7 +26,7 @@
   "productionDeployScript": null,
   "planner": {
     "provider": "claude-code",
-    "model": "sonnet",
+    "model": "opus",
     "adapter": "harness/adapters/claude-code.mjs",
     "maxOutputTokens": 4096,
     "maxContextBytes": 120000,
@@ -43,6 +43,7 @@
     ]
   },
   "implementation": {
-    "timeoutMs": 600000
+    "timeoutMs": 600000,
+    "maxRepairAttempts": 2
   }
 }
