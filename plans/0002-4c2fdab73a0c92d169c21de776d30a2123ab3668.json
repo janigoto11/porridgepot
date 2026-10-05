@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "id": "0002",
+  "spec": "specs/0002-welcome-page.md",
+  "specDigest": "2cf8ddf997a4b5a0b8dd8c7a07070c4504d7fb99385a1e7eac25a37df2457e44",
+  "baseCommit": "4c2fdab73a0c92d169c21de776d30a2123ab3668",
+  "planner": {
+    "provider": "claude-code",
+    "model": "sonnet"
+  },
+  "tasks": [
+    {
+      "id": "welcome-page-ui",
+      "owner": "apps/web",
+      "description": "Toteuta kirjautumisen jälkeinen tervetulosivu speksin 0002 mukaisesti: korvaa nykyinen \"Hello World.\" -teksti viestillä \"Welcome to the Porridge Pot\", lisää sovellukselle otsikkopalkki (header), joka näyttää kirjautumistilan (käyttäjätunnus kirjautuneena / ei kirjautunut), ja lisää otsikkopalkkiin käyttäjäkuvake, jota klikkaamalla avautuu pieni valikko, jossa on ainakin \"Kirjaudu ulos\" -vaihtoehto. Käytä olemassa olevaa logout-API-kutsua (api(\"logout\", {})) valikon kirjaudu ulos -toiminnossa. Muokkaa tarvittaessa apps/web/src/main.jsx- ja apps/web/src/style.css-tiedostoja. Muutos koskee vain frontend-sovellusta; backendiin (apps/api) tai infraan ei tehdä muutoksia.",
+      "spec": "specs/0002-welcome-page.md",
+      "allowedPaths": [
+        "apps/web"
+      ],
+      "acceptanceCriteria": [
+        "Kirjautuneelle käyttäjälle näytetään entisen \"Hello World.\" -tekstin tilalla viesti \"Welcome to the Porridge Pot\".",
+        "Sovelluksessa on otsikkopalkki (header), joka näyttää, onko käyttäjä kirjautunut sisään (esim. käyttäjätunnus) tai ei kirjautunut.",
+        "Otsikkopalkissa on käyttäjäkuvake, jota klikkaamalla avautuu valikko tai pudotusvalikko.",
+        "Avautuvasta valikosta löytyy \"Kirjaudu ulos\" -vaihtoehto, joka kutsuu olemassa olevaa /api/logout-toiminnallisuutta ja palauttaa käyttäjän kirjautumattomaan näkymään.",
+        "Kirjautumattomalle käyttäjälle näytetään edelleen olemassa oleva kirjautumislomake, eikä kirjautumisen toiminnallisuus rikkoonnu.",
+        "Muutokset on tehty ainoastaan apps/web-hakemiston tiedostoihin; apps/api- tai infra-hakemistoihin ei tehdä muutoksia."
+      ],
+      "dependsOn": []
+    }
+  ]
+}
