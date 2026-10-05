@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "id": "0003",
+  "spec": "specs/0003-shopping-lists.md",
+  "specDigest": "c4c991c34cd5113409270bfc555796c3915ccf5181f07c2df3db7894333490ba",
+  "baseCommit": "e3fe353f8a04ec632ef8a31d73bef4f81b6878d7",
+  "planner": {
+    "provider": "claude-code",
+    "model": "opus"
+  },
+  "tasks": [
+    {
+      "id": "api-shopping-lists",
+      "owner": "apps/api",
+      "description": "Lisää backendiin ostoslistojen rajapinta. Toteuta istunnolla suojatut päätepisteet GET /api/shopping-lists (kirjautuneen käyttäjän listat), POST /api/shopping-lists (yhden listan luonti tai päivitys, sisältää nimen ja rivit) ja POST /api/shopping-lists/delete (listan poisto). Säilö listat olemassa olevan avain-arvo-rakenteen kautta yhteen käyttäjäkohtaiseen tietueeseen (esim. pk LISTS#<username>), jotta nykyinen yhden osioavaimen (pk) taulu ja store.mjs:n get/put/delete riittävät eikä infraa tarvitse muuttaa. Toteuta istunnon tarkistus samalla vanhenemislogiikalla kuin /api/me ja säilytä nykyiset vastausmuodot, suomenkieliset virheilmoitukset ja no-store-otsakkeet.",
+      "spec": "specs/0003-shopping-lists.md",
+      "allowedPaths": [
+        "apps/api"
+      ],
+      "acceptanceCriteria": [
+        "GET /api/shopping-lists palauttaa 401 ja suomenkielisen viestin ilman kelvollista tai vanhentuneen istuntoevästeen kanssa, ja 200 sekä listat sisältävän JSONin kirjautuneelle käyttäjälle.",
+        "POST /api/shopping-lists luo uuden listan, kun id puuttuu, ja päivittää olemassa olevan listan nimen ja rivit, kun id on annettu; vastaus sisältää tallennetun listan tunnisteen ja sisällön.",
+        "POST /api/shopping-lists/delete poistaa vain pyytäjän oman listan ja palauttaa 200; tuntemattomalle id:lle vastataan 404.",
+        "Validointi hylkää virheellisen syötteen tilakoodeilla 400 (puuttuva tai väärän tyyppinen kenttä, liian pitkä nimi tai rivi, liian monta listaa tai riviä), 415 (content-type ei ole application/json) ja 413 (liian suuri runko).",
+        "Ostoslistat tallennetaan ja luetaan vain nykyisten store-operaatioiden get/put/delete avulla eikä apps/api sisällä uusia DynamoDB-avain- tai taulumäärityksiä.",
+        "Yhden käyttäjän listat eivät näy eikä muutu toisen käyttäjän pyynnöistä.",
+        "Olemassa olevat päätepisteet /api/health, /api/login, /api/me ja /api/logout toimivat ennallaan samoilla vastausmuodoilla."
+      ],
+      "dependsOn": []
+    },
+    {
+      "id": "api-shopping-lists-tests",
+      "owner": "tests/shopping-lists.test.mjs",
+      "description": "Lisää node:test-testit ostoslistojen rajapinnalle uuteen tiedostoon tests/shopping-lists.test.mjs. Käytä createHandler-funktiota ja memoryStore-muistivarastoa sekä hashPassword-apuria samalla tavalla kuin tests/auth.test.mjs, jotta testit eivät käytä verkkoa, AWS-palveluita eivätkä mallikutsuja.",
+      "spec": "specs/0003-shopping-lists.md",
+      "allowedPaths": [
+        "tests/shopping-lists.test.mjs"
+      ],
+      "acceptanceCriteria": [
+        "Testit ajautuvat komennolla npm test osana tests/*.test.mjs-joukkoa eivätkä tee verkko-, AWS- tai mallikutsuja.",
+        "Testi kattaa koko kierron: kirjautuminen, tyhjä listaus, listan luonti, nimen ja rivien päivitys, rivin poisto ja listan poisto.",
+        "Testi varmistaa, että kaikki ostoslistapäätepisteet palauttavat 401 ilman istuntoevästettä ja vanhentuneella istunnolla.",
+        "Testi varmistaa virheellisen syötteen käsittelyn vähintään tilakoodeille 400 ja 415.",
+        "Testi varmistaa käyttäjäkohtaisen eristyksen: toisen käyttäjän listat eivät näy eikä niitä voi poistaa."
+      ],
+      "dependsOn": [
+        "api-shopping-lists"
+      ]
+    },
+    {
+      "id": "web-shopping-lists-tab",
+      "owner": "apps/web/src",
+      "description": "Lisää frontendiin välilehdet ja ostoslistanäkymät. Näytä kirjautuneelle käyttäjälle välilehdet \"Home\" ja \"Shopping lists\" siten, että \"Home\" on aktiivinen kirjautumisen jälkeen. \"Shopping lists\" -välilehti listaa backendistä haetut listat ja tarjoaa uuden listan luonnin sekä olemassa olevan muokkauksen ja poiston. Muokkausnäkymässä listan nimi on muokattavissa, rivejä voi lisätä ja jokaisen olemassa olevan rivin lopussa on \"X\"-painike rivin poistoon. Erillistä tallennuspainiketta ei ole: muutokset tallennetaan automaattisesti backendiin (esim. viivästetty automaattitallennus) ja käyttäjä voi palata listausnäkymään paluupainikkeella. Käytä olemassa olevaa api-apufunktiota tai laajenna sitä tarvittaviin kutsuihin ja tyylittele uudet elementit style.css:ssä nykyisellä värimaailmalla.",
+      "spec": "specs/0003-shopping-lists.md",
+      "allowedPaths": [
+        "apps/web/src"
+      ],
+      "acceptanceCriteria": [
+        "Kirjautuneelle käyttäjälle näkyy kaksi välilehteä, \"Home\" ja \"Shopping lists\", ja \"Home\" on aktiivinen heti kirjautumisen jälkeen.",
+        "Välilehden vaihto näyttää vastaavan sisällön ilman sivun uudelleenlatausta, ja aktiivinen välilehti on tunnistettavissa myös saavutettavuusattribuuteilla (esim. role=\"tab\" ja aria-selected).",
+        "\"Shopping lists\" -välilehti hakee ja näyttää backendistä olemassa olevat listat sekä kertoo erikseen lataus-, tyhjä- ja virhetilanteen.",
+        "Listausnäkymästä voi luoda uuden listan sekä avata muokkaukseen tai poistaa olemassa olevan listan.",
+        "Muokkausnäkymässä listan nimi on muokattava tekstikenttä, uusia rivejä voi lisätä ja jokaisella olemassa olevalla rivillä on lopussa \"X\"-painike, joka poistaa rivin.",
+        "Muokkausnäkymässä ei ole tallennuspainiketta, vaan nimen ja rivien muutokset tallentuvat automaattisesti rajapintakutsulla ja tallennuksen tila tai virhe näytetään käyttäjälle.",
+        "Muokkausnäkymästä pääsee paluupainikkeella takaisin listojen listaukseen, jossa näkyvät juuri tehdyt muutokset.",
+        "Kirjautumaton käyttäjä näkee edelleen vain kirjautumislomakkeen eikä välilehtiä tai ostoslistoja."
+      ],
+      "dependsOn": [
+        "api-shopping-lists"
+      ]
+    },
+    {
+      "id": "docs-shopping-lists",
+      "owner": "docs/architecture.md",
+      "description": "Päivitä docs/architecture.md kuvaamaan ostoslistatoiminnallisuus: uudet /api/shopping-lists-päätepisteet, istuntosuojaus, käyttäjäkohtainen tallennusmalli nykyisessä yhden osioavaimen DynamoDB-taulussa sekä frontendin Home/Shopping lists -välilehdet ja automaattitallennus. Säilytä dokumentin nykyinen rakenne ja tiiviys eikä muuta muita dokumentteja.",
+      "spec": "specs/0003-shopping-lists.md",
+      "allowedPaths": [
+        "docs/architecture.md"
+      ],
+      "acceptanceCriteria": [
+        "docs/architecture.md listaa ostoslistojen päätepisteet ja mainitsee, että ne vaativat kelvollisen istunnon.",
+        "Dokumentti kuvaa, miten ostoslistat tallennetaan käyttäjäkohtaisesti nykyiseen pk-avaimella toimivaan tauluun ilman infrastruktuurimuutoksia.",
+        "Dokumentti kuvaa frontendin välilehdet Home ja Shopping lists sekä automaattisen tallennuksen ilman tallennuspainiketta.",
+        "Dokumentin aiemmat osuudet autentikoinnista ja AI SDLC -rajauksesta säilyvät eikä muita tiedostoja muuteta."
+      ],
+      "dependsOn": [
+        "api-shopping-lists",
+        "web-shopping-lists-tab"
+      ]
+    }
+  ]
+}
