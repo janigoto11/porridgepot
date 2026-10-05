@@ -68,6 +68,39 @@ test("push selection handles full range, multiple specs, deletion, rename and fi
     f.cleanup();
   }
 });
+test("force-push skips planning even when the old commit is unavailable", () => {
+  const f = fixture();
+  try {
+    const after = f.commit();
+    assert.deepEqual(
+      selectSpecs({
+        eventName: "push",
+        event: { before: "f".repeat(40), after, forced: true },
+        root: f.root,
+      }),
+      [],
+    );
+    assert.deepEqual(
+      selectSpecs({
+        eventName: "push",
+        event: { before: after, after, forced: true },
+        root: f.root,
+      }),
+      [],
+    );
+    assert.equal(
+      selectSpecs({
+        eventName: "workflow_dispatch",
+        event: {},
+        explicitSpec: "specs/0001-first.md",
+        root: f.root,
+      }).length,
+      1,
+    );
+  } finally {
+    f.cleanup();
+  }
+});
 test("manual selection fails on absent, unsafe or duplicate specs", () => {
   const f = fixture();
   try {

@@ -40,6 +40,8 @@ export function selectSpecs({ eventName, event, explicitSpec, root = process.cwd
       throw new Error("Invalid push commit range");
     if (git("rev-parse", "HEAD").trim() !== event.after)
       throw new Error("Checkout must match push.after");
+    // Rewritten history is not a new specification request. Select explicitly if needed.
+    if (event.forced === true) return [];
     try {
       paths = (
         event.before === "0".repeat(40)

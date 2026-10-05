@@ -11,3 +11,5 @@ Planin JSON ja siitä muodostettu luettava Markdown tallennetaan `plans/NNNN-<l�
 Paikallinen `npm run ai:plan -- specs/NNNN-nimi.md` tuottaa edelleen vain .ai/-artefaktit. Se vaatii commitoidun speksin, asennetun Claude Code CLI:n ja autentikoinnin; älä aja sitä vahingossa, sillä se käyttää mallipalvelua. Testit korvaavat palvelukutsut testivastauksilla.
 
 Nykyiset workflow't käyttävät `CLAUDE_CODE_OAUTH_TOKEN`-repository secretia. Tokenin lisääminen on erillinen käyttöönottovaihe. Suora Anthropic API -adapteri on vaihtoehto plannerille, mutta sen API-avain on eri tunniste. Katso [koko PR-ketju ja asetukset](pr-delivery.md).
+
+Historian uudelleenkirjoittava force-push ohittaa automaattisen suunnittelun. Select-yhteenveto kertoo syyn. Vanha before-commit ei välttämättä ole enää haettavissa, eikä historian siistiminen saa käynnistää vanhoja speksejä uudelleen. Käynnistä tällöin Plan tarvittaessa käsin täsmällisellä speksipolulla. Tavallisen pushin puuttuva vertailucommit on edelleen virhe.
