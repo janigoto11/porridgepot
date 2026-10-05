@@ -1,17 +1,38 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { api } from "./api.js";
+import ShoppingLists from "./shoppingLists.jsx";
 import "./style.css";
 
-async function api(path, body) {
-  const response = await fetch(`/api/${path}`, {
-    method: body === undefined ? "GET" : "POST",
-    credentials: "same-origin",
-    headers: body === undefined ? {} : { "Content-Type": "application/json" },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
-  const result = await response.json();
-  if (!response.ok) throw new Error(result.message || "Pyyntö epäonnistui.");
-  return result;
+const HOME_TAB = "home";
+const TABS = [
+  { id: HOME_TAB, label: "Koti" },
+  { id: "lists", label: "Ostoslistat" },
+];
+
+function Tabs({ active, onSelect }) {
+  return (
+    <div className="tabs" role="tablist" aria-label="Näkymät">
+      {TABS.map((tab) => {
+        const selected = tab.id === active;
+        return (
+          <button
+            key={tab.id}
+            type="button"
+            role="tab"
+            id={`tab-${tab.id}`}
+            className={selected ? "tab tab-active" : "tab"}
+            aria-selected={selected}
+            aria-controls={`panel-${tab.id}`}
+            tabIndex={selected ? 0 : -1}
+            onClick={() => onSelect(tab.id)}
+          >
+            {tab.label}
+          </button>
+        );
+      })}
+    </div>
+  );
 }
 
 function UserMenu({ user, busy, onLogout }) {
@@ -66,6 +87,8 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  // The Home tab is the active one on page load and right after signing in.
+  const [tab, setTab] = useState(HOME_TAB);
   useEffect(() => {
     api("me")
       .then((result) => setUser(result.user))
@@ -79,6 +102,7 @@ function App() {
     const data = new FormData(event.currentTarget);
     try {
       setUser((await api("login", Object.fromEntries(data))).user);
+      setTab(HOME_TAB);
     } catch (error) {
       setError(error.message);
     } finally {
@@ -91,6 +115,7 @@ function App() {
     try {
       await api("logout", {});
       setUser(null);
+      setTab(HOME_TAB);
     } catch (error) {
       setError(error.message);
     } finally {
@@ -111,14 +136,28 @@ function App() {
           <UserMenu user={user} busy={busy} onLogout={logout} />
         </div>
       </header>
-      <section>
+      <section className={user && tab !== HOME_TAB ? "wide" : undefined}>
         <p className="eyebrow">PIENESTÄ ALKAA</p>
         {loading ? (
           <p role="status">Ladataan…</p>
         ) : user ? (
           <>
-            <h1>Welcome to the Porridge Pot</h1>
-            <p>Tervetuloa, {user.username}. Tästä rakennamme seuraavan idean.</p>
+            <Tabs active={tab} onSelect={setTab} />
+            <div
+              className="tab-panel"
+              role="tabpanel"
+              id={`panel-${tab}`}
+              aria-labelledby={`tab-${tab}`}
+            >
+              {tab === HOME_TAB ? (
+                <>
+                  <h1>Welcome to the Porridge Pot</h1>
+                  <p>Tervetuloa, {user.username}. Tästä rakennamme seuraavan idean.</p>
+                </>
+              ) : (
+                <ShoppingLists />
+              )}
+            </div>
           </>
         ) : (
           <>

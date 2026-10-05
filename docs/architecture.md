@@ -16,6 +16,40 @@ real-user use, replace the demo identity system with managed authentication and
 add abuse controls, monitoring and a recovery process. Rotating a user's password
 does not currently invalidate that user's existing sessions.
 
+## Shopping lists
+
+The same Lambda also owns the shopping list endpoints:
+
+- GET /api/lists returns the caller's own lists as { lists: [...] }.
+- POST /api/lists creates an empty list with a default name and returns the created list.
+- PUT /api/lists/{id} replaces the name and the items of one list in a single request.
+- DELETE /api/lists/{id} removes one of the caller's lists.
+
+Every shopping list endpoint requires a valid session cookie and uses the same
+session check as /api/me: a missing, unknown or expired cookie returns 401, and the
+session's username scopes every read and write. Unknown list identifiers return 404,
+so one user can neither read nor modify another user's lists. Request bodies are
+validated like the login endpoint, with Finnish messages: a non-JSON content type
+returns 415, invalid JSON or an over-long name or item count returns 400, and an
+oversized body returns 413.
+
+All lists of one user live in a single DynamoDB item keyed pk = LISTS#&lt;username&gt;.
+Its lists attribute is an array of { id, name, items: [{ id, text }], updatedAt }.
+The existing table has one string partition key (pk) and already stores USER# and
+SESSION# items, so this user-scoped key fits the current single-table design: every
+read and write is one GetItem or PutItem on a key derived from the session username,
+which needs no secondary index, no sort key and no new table. Bounded limits on the
+number of lists, items and text lengths keep the item comfortably below the DynamoDB
+item size limit. Infrastructure code is therefore unchanged. The lists item has no
+expiresAt attribute, so the session TTL does not remove it.
+
+The frontend shows two tabs to a signed-in user, Koti (Home) and Ostoslistat
+(Shopping lists); Koti is active after sign-in and on page load. The shopping list
+view has a listing mode (create, open and delete lists) and an editing mode (edit the
+name, add rows, remove a row with the X button next to it, and return to the listing).
+There is no save button: edits are stored automatically with PUT /api/lists/{id}, and
+consecutive keystrokes are debounced into a single request.
+
 ## AI SDLC boundary
 
 See [PR delivery](pr-delivery.md) for the current Plan → Implement → CI → synth chain.
