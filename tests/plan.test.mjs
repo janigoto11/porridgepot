@@ -67,3 +67,27 @@ test("unconfigured review is explicit and only allowed for assignment", () => {
   assert.throws(() => assertReview({ ...approved, ...context, status: "approved" }, context));
   assert.throws(() => assertReview({ ...approved, status: "not_configured" }, expected));
 });
+
+test("ownership accepts exact and descendant paths but rejects parents and sibling prefixes", () => {
+  const task = { ...tasks[0], dependsOn: [] };
+  for (const [owner, allowedPaths] of [
+    ["apps/web", ["apps/web", "tests"]],
+    ["apps/web/src/main.jsx", ["apps/web"]],
+    ["apps/web/src/main.jsx", ["apps/web/src/main.jsx"]],
+  ])
+    validatePlan([{ ...task, owner, allowedPaths }]);
+  for (const [owner, allowedPaths] of [
+    ["apps/web", ["apps/web/src/main.jsx"]],
+    ["apps/web-extra", ["apps/web"]],
+    ["frontend", ["apps/web"]],
+  ])
+    assert.throws(
+      () => validatePlan([{ ...task, owner, allowedPaths }]),
+      (error) => {
+        assert.ok(error.message.includes(task.id));
+        assert.ok(error.message.includes(JSON.stringify(owner)));
+        assert.ok(error.message.includes(JSON.stringify(allowedPaths)));
+        return true;
+      },
+    );
+});

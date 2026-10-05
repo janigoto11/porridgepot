@@ -19,7 +19,8 @@
     },
     "owner": {
       "type": "string",
-      "pattern": "^(?!.*(?:^|/)\\.\\.(?:/|$))(?!/)[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*$"
+      "pattern": "^(?!.*(?:^|/)\\.\\.(?:/|$))(?!/)[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*$",
+      "description": "Repository-relative ownership path, not an agent name. Must equal an allowedPaths entry or be inside one. Prefer the primary allowedPaths entry; an ancestor of all allowed entries is invalid."
     },
     "description": {
       "type": "string",
@@ -37,7 +38,8 @@
         "pattern": "^(?!.*(?:^|/)\\.\\.(?:/|$))(?!/)[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*$"
       },
       "minItems": 1,
-      "uniqueItems": true
+      "uniqueItems": true,
+      "description": "Narrow repository-relative file or directory paths that this task may change. At least one entry must equal owner or contain owner as a descendant. Do not expand scope to fit an owner."
     },
     "acceptanceCriteria": {
       "type": "array",

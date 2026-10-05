@@ -30,7 +30,9 @@ export function validatePlan(plan, root = process.cwd()) {
     if (!readFileSync(spec, "utf8").trim()) throw new Error("Empty specification");
     for (const path of [task.owner, ...task.allowedPaths]) repositoryPath(path, root);
     if (!task.allowedPaths.some((p) => task.owner === p || task.owner.startsWith(`${p}/`)))
-      throw new Error("Owner outside allowedPaths");
+      throw new Error(
+        `Task ${task.id}: Owner outside allowedPaths: owner=${JSON.stringify(task.owner)}, allowedPaths=${JSON.stringify(task.allowedPaths)}. Owner must equal or be inside an allowed path; choose a narrower owner, do not broaden scope.`,
+      );
     if (task.dependsOn.some((id) => !ids.has(id) || id === task.id))
       throw new Error("Unknown or self dependency");
   }
