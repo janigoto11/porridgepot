@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "0005",
+  "spec": "specs/0005-welcome-page.md",
+  "specDigest": "6cedeccc311c73fc4016887ac9080f1b5ca31d0c4ecea0f66b048f4039ad1f40",
+  "baseCommit": "4b3025c82e64d6343e3f80fb110b615b10731947",
+  "planner": {
+    "provider": "claude-code",
+    "model": "opus"
+  },
+  "tasks": [
+    {
+      "id": "welcome-text",
+      "owner": "apps/web/src/main.jsx",
+      "description": "Vaihda kirjautumisen jälkeisen Koti-välilehden otsikko: korvaa englanninkielinen teksti \"Welcome to the Porridge Pot\" suomenkielisellä tekstillä \"Tervetuloa Porridge Pot -testipalveluun\". Muuta ainoastaan Koti-näkymän h1-otsikko App-komponentissa; älä koske muihin teksteihin, välilehtiin, kirjautumislomakkeeseen, backendiin tai infraan.",
+      "spec": "specs/0005-welcome-page.md",
+      "allowedPaths": [
+        "apps/web/src/main.jsx"
+      ],
+      "acceptanceCriteria": [
+        "Kirjautuneen käyttäjän Koti-välilehden h1-otsikko on täsmälleen \"Tervetuloa Porridge Pot -testipalveluun\".",
+        "Merkkijonoa \"Welcome to the Porridge Pot\" ei enää esiinny tiedostossa apps/web/src/main.jsx.",
+        "Muut näkymän tekstit (esimerkiksi \"Tervetuloa, {user.username}. Tästä rakennamme seuraavan idean.\", välilehtien nimet ja kirjautumisnäkymän tekstit) pysyvät ennallaan.",
+        "Muutos rajautuu tiedostoon apps/web/src/main.jsx; apps/api-, infra- ja specs-hakemistoihin ei tehdä muutoksia."
+      ],
+      "dependsOn": []
+    }
+  ]
+}
