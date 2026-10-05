@@ -41,3 +41,5 @@ Historialliset ai:dry-run- ja harness:review-komennot säilyvät aiemman vastaan
 Kun workflow't on commitoitu mainiin ja token lisätty, tee uusi numeroitu speksi, esimerkiksi `specs/0003-heading.md`, joka pyytää vain yhden nykyisen sivutekstin muuttamista. Pyydä rajaamaan tehtävän allowedPaths arvoon apps/web. Pushaa, katselmoi plan-PR ja mergeä. Seuraa Implement-ajoa, toteutus-PR:n automergeä ja Deploy preview -ajon synth-artefaktia. Sovellusta ei vielä julkaista AWS:iin.
 
 Lähteet: [Claude Code CLI](https://code.claude.com/docs/en/cli-reference), [GitHub-triggerit](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow).
+
+OAuth-tunnistautuminen ei toimi Claude Coden --bare-tilassa. Adapteri käyttää siksi tavallista print-tilaa erillisellä tilapäisellä HOME- ja CLAUDE_CONFIG_DIR-hakemistolla, tyhjillä setting-sources-asetuksilla sekä estetyillä hookeilla ja työkaluilla. Virheistä raportoidaan vain turvallinen luokka tai HTTP-status, ei raakaa mallivastausta tai tokenia.

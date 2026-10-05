@@ -10,7 +10,7 @@ import {
   taskOrder,
   renderPlan,
 } from "../harness/lib/delivery.mjs";
-import { ask } from "../harness/adapters/claude-code.mjs";
+import { ask, describeFailure } from "../harness/adapters/claude-code.mjs";
 test("frontend gate requires a nonempty exact directory boundary, including deleted/renamed paths", () => {
   assert.equal(frontendOnly(["apps/web/src/main.jsx"]), true);
   for (const paths of [
@@ -86,7 +86,11 @@ test("Claude Code adapter is bounded, disables tools and never forwards GitHub t
       ask(request, (cmd, args, opts) => {
         assert.equal(cmd, "claude");
         assert.equal(args[args.indexOf("--tools") + 1], "");
-        assert.ok(args.includes("--bare"));
+        assert.equal(args.includes("--bare"), false);
+        assert.equal(args[args.indexOf("--setting-sources") + 1], "");
+        assert.equal(opts.env.HOME, opts.cwd);
+        assert.equal(opts.env.ENABLE_CLAUDEAI_MCP_SERVERS, "false");
+        assert.equal(opts.env.ANTHROPIC_API_KEY, undefined);
         assert.equal(opts.env.GH_TOKEN, undefined);
         assert.equal(opts.env.GITHUB_TOKEN, undefined);
         assert.equal(opts.timeout, 180000);
@@ -123,4 +127,17 @@ test("readable plan includes scope, dependencies and acceptance criteria from th
   assert.match(text, /Vaihda otsikko/);
   assert.match(text, /Uusi otsikko näkyy/);
   assert.match(text, /apps\/web/);
+});
+
+test("Claude failures provide safe diagnostics without leaking provider output", () => {
+  const secret = "secret-do-not-log";
+  const message = describeFailure({
+    status: 1,
+    stdout: JSON.stringify({ is_error: true, result: `Not logged in ${secret}` }),
+  });
+  assert.match(message, /authentication failed/);
+  assert.equal(message.includes(secret), false);
+  assert.match(describeFailure({ code: "ETIMEDOUT" }), /timed out/);
+  assert.match(describeFailure({ stdout: JSON.stringify({ api_error_status: 429 }) }), /429/);
+  assert.match(describeFailure({ status: 2, stderr: secret }), /status 2/);
 });
