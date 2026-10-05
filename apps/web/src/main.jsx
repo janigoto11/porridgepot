@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import "./style.css";
 
@@ -13,6 +13,54 @@ async function api(path, body) {
   if (!response.ok) throw new Error(result.message || "Pyyntö epäonnistui.");
   return result;
 }
+
+function UserMenu({ user, busy, onLogout }) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    function handlePointerDown(event) {
+      if (containerRef.current && !containerRef.current.contains(event.target)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, []);
+
+  return (
+    <div className="user-menu" ref={containerRef}>
+      <button
+        type="button"
+        className="user-icon"
+        aria-haspopup="true"
+        aria-expanded={open}
+        aria-label="Käyttäjävalikko"
+        onClick={() => setOpen((value) => !value)}
+      >
+        {user ? user.username.slice(0, 1).toUpperCase() : "?"}
+      </button>
+      {open && (
+        <div className="user-menu-dropdown" role="menu">
+          {user ? (
+            <button
+              type="button"
+              role="menuitem"
+              disabled={busy}
+              onClick={() => {
+                setOpen(false);
+                onLogout();
+              }}
+            >
+              Kirjaudu ulos
+            </button>
+          ) : (
+            <span className="user-menu-info">Ei kirjautunut sisään</span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -52,8 +100,16 @@ function App() {
   return (
     <main>
       <header>
-        <span className="mark">P.</span>
-        <span>Porridge Pot</span>
+        <div className="brand">
+          <span className="mark">P.</span>
+          <span>Porridge Pot</span>
+        </div>
+        <div className="auth-status">
+          <span className="status-text">
+            {loading ? "Ladataan…" : user ? `Kirjautunut: ${user.username}` : "Ei kirjautunut"}
+          </span>
+          <UserMenu user={user} busy={busy} onLogout={logout} />
+        </div>
       </header>
       <section>
         <p className="eyebrow">PIENESTÄ ALKAA</p>
@@ -61,11 +117,8 @@ function App() {
           <p role="status">Ladataan…</p>
         ) : user ? (
           <>
-            <h1>Hello World.</h1>
+            <h1>Welcome to the Porridge Pot</h1>
             <p>Tervetuloa, {user.username}. Tästä rakennamme seuraavan idean.</p>
-            <button disabled={busy} onClick={logout}>
-              Kirjaudu ulos
-            </button>
           </>
         ) : (
           <>
