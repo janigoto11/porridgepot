@@ -1,3 +1,4 @@
+import { deliveryReviewSchema, assertDeliveryReview } from "../harness/lib/delivery-review.mjs";
 import { readFileSync, writeFileSync } from "node:fs";
 import { ask } from "../harness/adapters/claude-code.mjs";
 import { git } from "../harness/lib/delivery.mjs";
@@ -18,20 +19,11 @@ const review = ask({
     diff: git("diff", "--no-ext-diff", base, "HEAD"),
     gates,
   },
-  schema: {
-    type: "object",
-    additionalProperties: false,
-    required: ["verdict", "summary", "findings"],
-    properties: {
-      verdict: { enum: ["pass", "fail"] },
-      summary: { type: "string" },
-      findings: { type: "array", items: { type: "string" } },
-    },
-  },
+  schema: deliveryReviewSchema,
 });
-writeFileSync(
-  ".ai/implementation-review.json",
-  JSON.stringify({ ...review, baseCommit: base, headCommit: git("rev-parse", "HEAD") }, null, 2),
+const report = { ...review, baseCommit: base, headCommit: git("rev-parse", "HEAD") };
+writeFileSync(".ai/implementation-review.json", JSON.stringify(report, null, 2));
+console.log(
+  `AI review: ${review.verdict}; blocking findings: ${review.blockingFindings.length}; observations: ${review.observations.length}. See implementation-review.json in the evidence artifact.`,
 );
-if (review.verdict !== "pass" || review.findings.length)
-  throw new Error("AI review blocked implementation");
+assertDeliveryReview(report, { baseCommit: base, headCommit: report.headCommit });

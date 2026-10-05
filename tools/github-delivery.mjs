@@ -1,3 +1,4 @@
+import { assertDeliveryReview } from "../harness/lib/delivery-review.mjs";
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync, mkdirSync, appendFileSync } from "node:fs";
 import { git, changedFiles, frontendOnly, renderPlan } from "../harness/lib/delivery.mjs";
@@ -114,13 +115,7 @@ if (command === "publish-plan") {
   if (!paths.length) throw new Error("No implementation changes");
   const review = JSON.parse(readFileSync(".ai/implementation-review.json", "utf8"));
   const head = git("rev-parse", "HEAD");
-  if (
-    review.verdict !== "pass" ||
-    review.findings.length ||
-    review.baseCommit !== base ||
-    review.headCommit !== head
-  )
-    throw new Error("Review provenance mismatch");
+  assertDeliveryReview(review, { baseCommit: base, headCommit: head });
   const branch = git("branch", "--show-current");
   if (!/^implement\/\d+$/.test(branch)) throw new Error("Invalid implementation branch");
   push(`HEAD:refs/heads/${branch}`);

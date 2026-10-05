@@ -67,3 +67,9 @@ Korjauskutsut kuluttavat Claude-kiintiötä. Mallivirhe, tyhjä korjaus tai kiel
 `implementation-evidence-*`-artefakti sisältää `check-0.log`-alkuiset tarkistuslokit, kierroskohtaiset `gates-*.json`-raportit ja `repair-progress.json`-tapahtumat. Erillinen aina ajettava tallennusvaihe säilyttää myös epäonnistuessa `implementation.patch`-muutokset (apps/infra/tests/docs, myös keskeneräiset seuratut muutokset), uusien vielä seuraamattomien tiedostojen sisällöt `untracked/`-hakemistossa sekä lähtöcommitin `source-state.json`-tiedostossa. Säilytys on 7 päivää. Runnerin pakkopysäytys voi estää artefaktin tallennuksen.
 
 Palautus tutkittavaksi: luo erillinen checkout `source-state.json`-tiedoston baseCommitista, sovella `git apply implementation.patch` ja kopioi mahdollinen `untracked/`-sisältö samoihin suhteellisiin polkuihin. Tämä palauttaa lähdekoodin, ei commit-historiaa eikä automaattisesti jatkuvaa workflow-ajoa.
+
+## AI-katselmoinnin hyväksyntä
+
+Katselmointiraportti erottaa estävät virheet (`blockingFindings`) ja ei-estävät huomiot (`observations`). Hyväksyntä vaatii `verdict: "pass"` ja tyhjän `blockingFindings`-listan. Huomiot säilyvät raportissa eivätkä estä julkaisua. Katselmointivaihe ja PR:n julkaisuvaihe käyttävät samaa skeeman, hyväksynnän ja lähtö-/toteutuscommitin tarkistavaa funktiota. `fail` tai yksikin estävä havainto pysäyttää etenemisen. Lokissa näkyy päätös ja havaintojen lukumäärät; sisältö löytyy artefaktin `implementation-review.json`-tiedostosta.
+
+Vanhan `findings`-muodon raportteja ei hyväksytä automaattisesti: palautettu toteutus tarvitsee uuden katselmoinnin uudessa muodossa. Tämä muutos ei lisää AI-review-havaintojen automaattista korjauskierrosta; nykyinen korjaussilmukka käsittelee determinististen tarkistusten virheitä.

@@ -133,7 +133,7 @@ if(result !== null) console.log(JSON.stringify(result));
         `#!/usr/bin/env node
 const fs = require('node:fs');
 const data = JSON.parse(fs.readFileSync(0,'utf8'));
-const structured_output = data.task ? {summary:'Changed message',files:[{path:${JSON.stringify(changedPath)},content:'export const message = "After";\\n'}]} : {verdict:'pass',summary:'Matches plan',findings:[]};
+const structured_output = data.task ? {summary:'Changed message',files:[{path:${JSON.stringify(changedPath)},content:'export const message = "After";\\n'}]} : {verdict:'pass',summary:'Matches plan',blockingFindings:[],observations:['Optional improvement']};
 if (${JSON.stringify(mode)} === 'timeout') setTimeout(() => {}, 5000);
 else console.log(JSON.stringify({subtype:'success',structured_output}));
 `,
@@ -191,6 +191,26 @@ else console.log(JSON.stringify({subtype:'success',structured_output}));
       assert.match(readFileSync(join(root, changedPath), "utf8"), /After/);
       put(".ai/gates.json", { status: "passed", gates: [] });
       run("tools/review-implementation.mjs", null, extra);
+      const reportPath = join(root, ".ai/implementation-review.json");
+      const report = JSON.parse(readFileSync(reportPath));
+      for (const patch of [
+        { blockingFindings: ["Must fix defect"] },
+        { verdict: "fail" },
+        { headCommit: "0".repeat(40) },
+        { baseCommit: "0".repeat(40) },
+        { observations: null },
+      ]) {
+        put(".ai/implementation-review.json", { ...report, ...patch });
+        const blocked = spawnSync(
+          process.execPath,
+          [resolve("tools/github-delivery.mjs"), "publish-implementation"],
+          { cwd: root, encoding: "utf8", env: { ...env, ...extra } },
+        );
+        assert.notEqual(blocked.status, 0);
+        assert.equal(JSON.parse(readFileSync(join(sandbox, "state.json"))).prs.length, 1);
+      }
+      put(".ai/implementation-review.json", report);
+
       if (mode === "stale-main") {
         const concurrent = join(sandbox, "concurrent");
         execFileSync("git", ["clone", "--branch", "main", remote, concurrent], { stdio: "pipe" });
