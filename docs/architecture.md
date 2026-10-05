@@ -52,7 +52,7 @@ consecutive keystrokes are debounced into a single request.
 
 ## AI SDLC boundary
 
-See [PR delivery](pr-delivery.md) for the current Plan → Implement → CI → synth chain.
+See [PR delivery](pr-delivery.md) for the current Plan → Implement → synth chain. CI remains available for manual checks only.
 Plans are reviewed as PRs; their merge authorizes bounded implementation tasks.
 Deterministic checks and Claude diff review precede implementation PR publication.
 Changes confined to apps/web/ and/or docs/ can merge automatically, including docs-only changes,

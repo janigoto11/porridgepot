@@ -20,7 +20,5 @@ Omistus: .github/workflows, tools, harness, tests ja dokumentaatio.
 
 ## CI-triggerien täsmennys
 
-CI:n omistus: .github/workflows/ci.yml, plan.yml, tools/github-delivery.mjs ja ketjutestit.
-Botin PR:t eivät saa synnyttää hyväksyntää odottavia pull_request-CI-ajoja.
-Ihmisen saman repon haarapush ja botin eksplisiittinen dispatch tarkistavat tarkan commitin.
-Plan- ja toteutus-PR:n CI-dispatch testataan mallikutsuitta. Workflow'iden määrä pysyy neljässä.
+CI säilyy repossa vain workflow_dispatch-käynnistyksellä. Käyttäjä valitsee haaran ja antaa sen täyden commit-SHA:n; workflow varmistaa vastaavuuden ennen checkoutia.
+Plan ja Implement eivät dispatchaa CI:tä. Ketjutestit varmistavat tämän sekä Deploy preview -dispatchin säilymisen automergessä. Implementin omat portit säilyvät pakollisina. Workflow'iden määrä pysyy neljässä.

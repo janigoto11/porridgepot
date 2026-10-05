@@ -77,6 +77,8 @@ CDK-bootstrapin resurssit ovat myös erillisiä.
 ## AI-putki
 
 Katso [PR-pohjaisen kehitysketjun ohje](docs/pr-delivery.md).
+CI säilyy käsin käynnistettävänä tarkistuksena (Actions → CI → Run workflow), mutta
+se ei käynnisty pusheista eikä Plan- tai Implement-workflow’sta.
 
 Speksin push mainiin → Plan-PR → ihmisen merge → toteutus ja tarkistukset →
 toteutus-PR → ihmisen tai automaation merge → CDK synth.

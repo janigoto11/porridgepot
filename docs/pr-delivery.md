@@ -4,7 +4,7 @@
 
 1. **Plan**: main-push valitsee muuttuneet numeroidut `specs/NNNN-nimi.md`-tiedostot. Claude Code tuottaa tehtävät. Harness validoi JSONin ja luo siitä suomenkielisen Markdown-kuvauksen. Molemmat tallennetaan `plans/NNNN-<lähtöcommit>.json/.md`-tiedostoihin. PR: `plan/NNNN-<lähtöcommit>` → `main`.
 2. **Implement**: plan-PR:n merge aloittaa toteutuksen haarassa `implement/<plan-PR-numero>`. JSON ja Markdown tarkistetaan vastaaviksi. Lähtökoodin on oltava sama kuin suunnittelussa (muiden planien lisääminen sallitaan). Tehtävät ajetaan riippuvuusjärjestyksessä. Jokaisella on allowedPaths, omistaja ja hyväksymiskriteerit. Agentti palauttaa tiedostosisällöt; harness validoi polut, muotoilee ja commitoi ne. Build/lint/test/synth ja erillinen Claude-katselmointi edeltävät PR:n avausta.
-3. **CI**: yleiset deterministiset tarkistukset saman repon kaikkien haarojen pushien yhteydessä. Botin avaaman plan- tai toteutus-PR:n jälkeen automaatio kutsuu samaa CI-workflow’ta workflow_dispatch-tapahtumalla. Implement ajaa samat tarkistukset itse eikä odota tätä erillistä CI-ajoa.
+3. **CI**: vain käsin käynnistettävät deterministiset tarkistukset. Pushit, PR:t, Plan ja Implement eivät käynnistä CI:tä. Implement ajaa omat tarkistuksensa ennen julkaisua.
 4. **Deploy preview**: ihmisen tekemä implement-PR:n merge tai automergen ohjelmallinen dispatch käynnistää tämän. Syötteen on vastattava yhdistettyä implement-PR:ää ja mainin historiaan kuuluvaa committia. `npm run check` rakentaa ja tarkistaa sovelluksen sekä ajaa CDK synthin. CloudFormation-malli tallennetaan artefaktiksi. **AWS:iin ei deployata eikä AWS-tunnuksia tarvita.**
 
 Plan-PR:n voi lukea GitHubin Files changed -näkymässä. Markdown on JSONin deterministinen esitys: katselmoija ja toteuttaja näkevät samat tehtävät. Raportit ja tarkistustulokset jäävät Actions-artefakteiksi (7 päivää) ja PR:ssä on linkki ajoon.
@@ -20,11 +20,11 @@ Jos muutos koskee muitakin hakemistoja tai main on edennyt, PR jää ihmisen yhd
 ## GitHub-asetukset
 
 - Repo voi olla private ja tili Free. Environmentteja tai haarasuojauksia ei edellytetä.
-- Settings → Actions → General → Workflow permissions: salli **Allow GitHub Actions to create and approve pull requests**. Workflow-kohtaiset contents/pull-requests/actions-oikeudet on määritelty YAMLissa.
+- Settings → Actions → General → Workflow permissions: salli **Allow GitHub Actions to create and approve pull requests**. Workflow-kohtaiset oikeudet on määritelty YAMLissa; Implement tarvitsee actions: write -oikeuden Deploy preview -käynnistykseen.
 - Lisää myöhemmin repository secretiin `CLAUDE_CODE_OAUTH_TOKEN`. Token luodaan Claude Coden `claude setup-token` -komennolla. Älä laita tokenia tiedostoihin, PR:ään tai chattiin.
 - Workflows asentavat lukitun Claude Code CLI -version 2.1.277. Planner, toteuttaja, korjaaja ja katselmoija käyttävät samaa CLI-adapteria ja `opus`-mallialiasia. Alias voidaan korvata täsmällisellä mallilla harness/config.jsonissa.
 - Aiempi Anthropic API -adapteri on säilytetty vaihtoehtona plannerille. OAuth-token ei ole ANTHROPIC_API_KEY. Nykyiset workflow't välittävät vain OAuth-tokenin.
-- CI ei kuuntele pull_request-tapahtumaa, joten botin PR ei synnytä hyväksyntää odottavaa CI-ajoa. Ihmisen haarapush tarkistetaan ilman PR:ääkin. Pelkkä PR:n avaaminen/uudelleenavaaminen tai kohdehaaran vaihtaminen ei aja CI:tä uudelleen, eikä ulkoisen forkin push kuulu tämän repon CI:hin. Tämä malli on tarkoitettu nykyiselle saman repon kehitykselle.
+- CI käynnistetään vain Actions → CI → Run workflow -toiminnolla. Valitse haara ja anna sen nykyinen täysi commit-SHA. CI ei kuulu automaattiseen demoketjuun.
 
 ## Rajat ja kehittäminen
 
@@ -46,9 +46,9 @@ OAuth-tunnistautuminen ei toimi Claude Coden --bare-tilassa. Adapteri käyttää
 
 ## CI-ajon tarkka versio
 
-Botin PR:n luoja lähettää CI:lle lähdehaaran ja sen commit-SHA:n. CI varmistaa, että dispatchin GitHub SHA vastaa annettua committia, ja checkout käyttää tätä muuttumatonta SHA:ta. Jos haara ehti liikkua, ajo pysähtyy eikä esitä uudempaa koodia aiemmin tarkistettuna. CI:n check liittyy lähdehaaran committiin, ei mainiin. CI tarkistaa haaran version; se ei muodosta PR:n virtuaalista merge-committia.
+CI varmistaa, että käsin annetun commit-SHA:n arvo vastaa valitun haaran dispatch-SHA:ta, ja checkout käyttää tätä muuttumatonta SHA:ta. Jos haara ehti liikkua, ajo pysähtyy. CI tarkistaa haaran version, ei PR:n virtuaalista merge-committia.
 
-Käsin uusinta: Actions → CI → Run workflow, valitse PR:n lähdehaara ja anna sen nykyinen täysi commit-SHA. Tämä ei kutsu Claudea. Dispatch-virhe pysäyttää PR:n julkaisuvaiheen ennen automergeä; jo avattu PR säilyy. Implementin oma check + AI-review on edelleen automergen portti; erillinen CI on rinnakkainen tarkistus.
+Käsin käynnistettävä CI ei kutsu Claudea. Implementin oma check + AI-review toimii edelleen automergen porttina. Deploy preview ajaa myös omat tarkistuksensa. CI-workflow säilyy repossa ja Actions-listassa myöhempää käyttöä varten.
 
 ## Toteutuksen aikarajat ja virhetilanteet
 

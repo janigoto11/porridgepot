@@ -1,7 +1,5 @@
 name: CI
 on:
-  push:
-    branches: ["**"]
   workflow_dispatch:
     inputs:
       commit:
@@ -16,7 +14,6 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Verify dispatched revision
-        if: github.event_name == 'workflow_dispatch'
         env:
           EXPECTED_SHA: ${{ inputs.commit }}
           ACTUAL_SHA: ${{ github.sha }}

@@ -230,10 +230,7 @@ else console.log(JSON.stringify({subtype:'success',structured_output}));
       run("tools/github-delivery.mjs", "publish-implementation", extra);
       const state = JSON.parse(readFileSync(join(sandbox, "state.json")));
       assert.equal(state.prs.length, 2);
-      assert.deepEqual(
-        state.ciDispatches,
-        state.prs.map((pr) => ({ ref: pr.head.ref, inputs: { commit: pr.head.sha } })),
-      );
+      assert.equal(state.ciDispatches, undefined, "Plan and Implement must not dispatch CI");
       if (!["frontend", "docs", "web-docs"].includes(mode)) {
         assert.equal(state.dispatch, undefined);
         assert.notEqual(
