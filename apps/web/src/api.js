@@ -18,15 +18,15 @@ async function parseBody(response) {
 
 // Shared request helper for every API call: sends the session cookie with the
 // same-origin policy and turns a non-ok response into an Error that carries the
-// server's own Finnish message.
+// server's own Finnish message. A request without a body carries no body or
+// content type at all, so GET and DELETE stay valid fetch calls.
 export async function request(path, { method = "GET", body } = {}) {
-  const hasBody = body !== undefined && body !== null;
-  const response = await fetch(resolvePath(path), {
-    method,
-    credentials: "same-origin",
-    headers: hasBody ? { "Content-Type": "application/json" } : {},
-    body: hasBody ? JSON.stringify(body) : undefined,
-  });
+  const options = { method, credentials: "same-origin" };
+  if (body !== undefined && body !== null) {
+    options.headers = { "Content-Type": "application/json" };
+    options.body = JSON.stringify(body);
+  }
+  const response = await fetch(resolvePath(path), options);
   const result = await parseBody(response);
   if (!response.ok) throw new Error(result.message || "Pyyntö epäonnistui.");
   return result;
