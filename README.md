@@ -79,11 +79,11 @@ CDK-bootstrapin resurssit ovat myös erillisiä.
 Katso [PR-pohjaisen kehitysketjun ohje](docs/pr-delivery.md).
 
 Speksin push mainiin → Plan-PR → ihmisen merge → toteutus ja tarkistukset →
-toteutus-PR → ihmisen tai frontend-automaation merge → CDK synth.
+toteutus-PR → ihmisen tai automaation merge → CDK synth.
 
 Planner, toteuttaja ja katselmoija käyttävät Claude Codea. Repository secret
 `CLAUDE_CODE_OAUTH_TOKEN` lisätään erikseen ennen ensimmäistä malliajoa.
-Pelkkä apps/web/-muutos yhdistetään automaattisesti, jos tarkistukset ja AI-review
+Vain apps/web/- ja/tai docs/-hakemistoihin rajautuva muutos yhdistetään automaattisesti, jos tarkistukset ja AI-review
 onnistuvat eikä main ole muuttunut. AWS:iin ei vielä deployata.
 
 `npm run check` ajaa harnessin deterministiset portit. Vanhan dry-run-rungon

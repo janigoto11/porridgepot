@@ -14,9 +14,9 @@ import { join, resolve } from "node:path";
 import { execFileSync, spawnSync } from "node:child_process";
 import { digest } from "../harness/lib/specs.mjs";
 
-for (const mode of ["frontend", "backend", "stale-main", "timeout"])
+for (const mode of ["frontend", "docs", "web-docs", "backend", "stale-main", "timeout"])
   test(`mocked Git delivery: ${mode}`, () => {
-    const area = mode === "backend" ? "apps/api" : "apps/web";
+    const area = mode === "backend" ? "apps/api" : mode === "docs" ? "docs" : "apps/web";
     const changedPath = `${area}/message.js`;
     const sandbox = mkdtempSync(join(tmpdir(), "delivery-flow-"));
     const root = join(sandbox, "repo"),
@@ -67,7 +67,7 @@ for (const mode of ["frontend", "backend", "stale-main", "timeout"])
       put(changedPath, 'export const message = "Before";\n');
       put("specs/0009-demo.md", "# Demo\nChange the message to After.\n");
       const config = JSON.parse(readFileSync("harness/config.json"));
-      config.planner.contextPaths = ["apps"];
+      config.planner.contextPaths = ["apps", "docs"];
       config.implementation.timeoutMs = mode === "timeout" ? 1000 : 12000;
       put("harness/config.json", config);
       for (const path of [
@@ -96,7 +96,7 @@ for (const mode of ["frontend", "backend", "stale-main", "timeout"])
             owner: area,
             description: "Change message",
             spec: "specs/0009-demo.md",
-            allowedPaths: [area],
+            allowedPaths: mode === "web-docs" ? [area, "docs"] : [area],
             dependsOn: [],
             acceptanceCriteria: ["Message is After"],
           },
@@ -189,6 +189,11 @@ else console.log(JSON.stringify({subtype:'success',structured_output}));
         ],
       );
       assert.match(readFileSync(join(root, changedPath), "utf8"), /After/);
+      if (mode === "web-docs") {
+        put("docs/demo.md", "Updated frontend documentation\n");
+        git("add", "docs/demo.md");
+        git("commit", "-m", "Document frontend change");
+      }
       put(".ai/gates.json", { status: "passed", gates: [] });
       run("tools/review-implementation.mjs", null, extra);
       const reportPath = join(root, ".ai/implementation-review.json");
@@ -229,7 +234,7 @@ else console.log(JSON.stringify({subtype:'success',structured_output}));
         state.ciDispatches,
         state.prs.map((pr) => ({ ref: pr.head.ref, inputs: { commit: pr.head.sha } })),
       );
-      if (mode !== "frontend") {
+      if (!["frontend", "docs", "web-docs"].includes(mode)) {
         assert.equal(state.dispatch, undefined);
         assert.notEqual(
           git("ls-remote", "origin", "refs/heads/main").split(/\s/)[0],

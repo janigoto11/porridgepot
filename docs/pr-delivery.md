@@ -9,9 +9,9 @@
 
 Plan-PR:n voi lukea GitHubin Files changed -näkymässä. Markdown on JSONin deterministinen esitys: katselmoija ja toteuttaja näkevät samat tehtävät. Raportit ja tarkistustulokset jäävät Actions-artefakteiksi (7 päivää) ja PR:ssä on linkki ajoon.
 
-## Frontend-automaatti
+## Frontendin ja dokumentaation automerge
 
-Kaikkien todellisten muutospolkujen täytyy alkaa `apps/web/`. Myös poistot ja siirron molemmat puolet huomioidaan. Tyhjä muutos ei kelpaa. Determinististen tarkistusten ja AI-review'n on onnistuttava samalle toteutuscommitille. Toteutus-PR avataan aina.
+Kaikkien todellisten muutospolkujen täytyy alkaa `apps/web/` tai `docs/`. Pelkät frontend-muutokset, pelkät dokumentaatiomuutokset ja näiden yhdistelmät kelpaavat. Repon juuren README.md ja tests/-hakemisto eivät kuulu sallittuun rajaukseen. Myös poistot ja siirron molemmat puolet huomioidaan. Tyhjä muutos ei kelpaa. Determinististen tarkistusten ja AI-review'n on onnistuttava samalle toteutuscommitille. Toteutus-PR avataan aina.
 
 Jos main on yhä toteutuksen lähtöcommitissa, automaatio tekee vain fast-forward-pushin mainiin. GitHub tunnistaa PR:n commitit yhdistetyiksi. Rinnakkainen main-muutos estää pushin; muutoksia ei ylikirjoiteta. Automaatio käynnistää deploy-preview'n erikseen, koska GITHUB_TOKEN-push ei käynnistä tavallista push-workflow'ta. GitHubin maksullista Auto-merge-ominaisuutta ei käytetä.
 

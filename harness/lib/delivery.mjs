@@ -43,10 +43,14 @@ export function applyFiles(files, allowedPaths) {
     }
   }
 }
-export function frontendOnly(paths) {
+export function autoMergeEligible(paths) {
   return (
     paths.length > 0 &&
-    paths.every((p) => p.startsWith("apps/web/") && allowedFile(p, ["apps/web"]))
+    paths.every(
+      (p) =>
+        (p.startsWith("apps/web/") || p.startsWith("docs/")) &&
+        allowedFile(p, ["apps/web", "docs"]),
+    )
   );
 }
 export function changedFiles(base, head = "HEAD") {

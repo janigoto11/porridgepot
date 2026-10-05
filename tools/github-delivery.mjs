@@ -1,7 +1,7 @@
 import { assertDeliveryReview } from "../harness/lib/delivery-review.mjs";
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync, mkdirSync, appendFileSync } from "node:fs";
-import { git, changedFiles, frontendOnly, renderPlan } from "../harness/lib/delivery.mjs";
+import { git, changedFiles, autoMergeEligible, renderPlan } from "../harness/lib/delivery.mjs";
 import { validateDocument } from "../harness/lib/planning.mjs";
 const repo = process.env.GITHUB_REPOSITORY;
 if (!/^[\w.-]+\/[\w.-]+$/.test(repo || "")) throw new Error("Invalid repository");
@@ -119,12 +119,12 @@ if (command === "publish-plan") {
   const branch = git("branch", "--show-current");
   if (!/^implement\/\d+$/.test(branch)) throw new Error("Invalid implementation branch");
   push(`HEAD:refs/heads/${branch}`);
-  const eligible = frontendOnly(paths);
+  const eligible = autoMergeEligible(paths);
   const pr = api("pulls", "POST", {
     head: branch,
     base: "main",
     title: `Implement plan PR #${branch.split("/")[1]}`,
-    body: `Plan: ${process.env.PLAN_PATH}\n\nDeterministic checks and AI review passed for ${head}.\n\n${review.summary}\n\nAutomatic frontend rule: ${eligible ? "eligible" : "human merge required"}.\n\nEvidence: https://github.com/${repo}/actions/runs/${process.env.GITHUB_RUN_ID}`,
+    body: `Plan: ${process.env.PLAN_PATH}\n\nDeterministic checks and AI review passed for ${head}.\n\n${review.summary}\n\nAutomatic merge rule (apps/web and docs): ${eligible ? "eligible" : "human merge required"}.\n\nEvidence: https://github.com/${repo}/actions/runs/${process.env.GITHUB_RUN_ID}`,
   });
   appendFileSync(process.env.GITHUB_STEP_SUMMARY, `Implementation PR: ${pr.html_url}\n`);
   dispatchCI(branch, head);
@@ -138,12 +138,12 @@ if (command === "publish-plan") {
     });
     appendFileSync(
       process.env.GITHUB_STEP_SUMMARY,
-      "Frontend change merged automatically; synth workflow dispatched.\n",
+      "Web/docs change merged automatically; synth workflow dispatched.\n",
     );
   } else
     appendFileSync(
       process.env.GITHUB_STEP_SUMMARY,
-      "PR awaits human merge (non-frontend change or main advanced).\n",
+      "PR awaits human merge (change outside apps/web and docs, or main advanced).\n",
     );
 } else if (command === "deploy-target") {
   const event = JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, "utf8"));

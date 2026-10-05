@@ -55,6 +55,7 @@ consecutive keystrokes are debounced into a single request.
 See [PR delivery](pr-delivery.md) for the current Plan → Implement → CI → synth chain.
 Plans are reviewed as PRs; their merge authorizes bounded implementation tasks.
 Deterministic checks and Claude diff review precede implementation PR publication.
-Frontend-only changes can merge automatically; other changes require a human merge.
+Changes confined to apps/web/ and/or docs/ can merge automatically, including docs-only changes,
+when checks and review pass and main has not advanced. Other changes require a human merge.
 The deployment workflow generates CloudFormation only, with no AWS credentials.
 Legacy assignment dry-run commands remain for tests and are not the active delivery chain.

@@ -6,23 +6,31 @@ import { tmpdir } from "node:os";
 import {
   allowedFile,
   applyFiles,
-  frontendOnly,
+  autoMergeEligible,
   taskOrder,
   renderPlan,
 } from "../harness/lib/delivery.mjs";
 import { validate } from "../harness/lib/validate.mjs";
 import { ask, describeFailure } from "../harness/adapters/claude-code.mjs";
-test("frontend gate requires a nonempty exact directory boundary, including deleted/renamed paths", () => {
-  assert.equal(frontendOnly(["apps/web/src/main.jsx"]), true);
+test("automatic merge gate requires a nonempty exact directory boundary, including deleted/renamed paths", () => {
+  assert.equal(autoMergeEligible(["apps/web/src/main.jsx"]), true);
+  assert.equal(autoMergeEligible(["docs/architecture.md"]), true);
+  assert.equal(autoMergeEligible(["apps/web/src/main.jsx", "docs/architecture.md"]), true);
   for (const paths of [
     [],
     ["apps/web2/a.js"],
+    ["docs-old/a.md"],
+    ["docs/../infra/app.mjs"],
+    ["docs/.env"],
+    ["docs/a.md", "tests/a.test.mjs"],
+    ["README.md"],
+    ["docs/a.md", "apps/api/handler.mjs"],
     ["apps/web/a.js", "infra/app.mjs"],
     ["apps/web/../api/a.js"],
     ["apps/web/.env"],
     ["apps/api/old.js", "apps/web/new.js"],
   ])
-    assert.equal(frontendOnly(paths), false);
+    assert.equal(autoMergeEligible(paths), false);
   assert.equal(allowedFile("harness/config.json", ["harness"]), false);
   assert.equal(allowedFile("apps/api/index.mjs", ["apps/web"]), false);
 });
