@@ -1,0 +1,44 @@
+name: Destroy demo
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: Type DELETE porridgepot-demo (permanently deletes users and shopping lists)
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  destroy:
+    if: github.ref == 'refs/heads/main' && inputs.confirmation == 'DELETE porridgepot-demo'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    concurrency:
+      group: aws-demo
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      AWS_EC2_METADATA_DISABLED: "true"
+      AWS_REGION: eu-north-1
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build && npm run synth
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::818028063586:role/porridgepot-github-deploy
+          aws-region: eu-north-1
+      - name: Permanently delete demo stacks and application data
+        run: node tools/demo.mjs destroy
+        env:
+          DESTROY_CONFIRM: ${{ inputs.confirmation }}
+      - run: echo 'Demo stacks deleted. CDK bootstraps remain for reuse.' >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,33 @@
+name: CI
+on:
+  workflow_dispatch:
+    inputs:
+      commit:
+        description: Exact commit at the selected branch tip
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Verify dispatched revision
+        env:
+          EXPECTED_SHA: ${{ inputs.commit }}
+          ACTUAL_SHA: ${{ github.sha }}
+        run: |
+          node -e 'const {EXPECTED_SHA, ACTUAL_SHA} = process.env; if (!/^[a-f0-9]{40}$/.test(EXPECTED_SHA || "") || EXPECTED_SHA !== ACTUAL_SHA) throw new Error("Branch moved or invalid commit: dispatch CI again for the current branch tip");'
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+        env:
+          AWS_EC2_METADATA_DISABLED: "true"

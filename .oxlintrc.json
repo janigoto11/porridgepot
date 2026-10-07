@@ -1,0 +1,22 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "unicorn", "oxc", "react"],
+  "categories": {
+    "correctness": "error"
+  },
+  "rules": {},
+  "env": {
+    "builtin": true
+  },
+  "ignorePatterns": [
+    "ATTIC/**",
+    "node_modules/**",
+    "dist/**",
+    "cdk.out/**",
+    ".ai/**",
+    ".idea/**",
+    "cdk-outputs.json",
+    ".env",
+    ".env.*"
+  ]
+}

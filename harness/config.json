@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "checks": {
+    "compile": {
+      "script": "build",
+      "reason": "Existing Vite and esbuild build"
+    },
+    "lint": {
+      "script": "lint",
+      "reason": "Oxlint correctness rules and Oxfmt formatting check"
+    },
+    "test": {
+      "script": "test",
+      "reason": "Existing Node test runner including harness tests"
+    },
+    "synth": {
+      "script": "synth",
+      "reason": "Existing AWS CDK application; build must run first"
+    }
+  },
+  "review": {
+    "provider": "unconfigured",
+    "model": null,
+    "adapter": null
+  },
+  "productionDeployScript": null,
+  "planner": {
+    "provider": "claude-code",
+    "model": "opus",
+    "adapter": "harness/adapters/claude-code.mjs",
+    "maxOutputTokens": 4096,
+    "maxContextBytes": 180000,
+    "timeoutMs": 180000,
+    "contextPaths": [
+      "AGENTS.md",
+      "package.json",
+      "cdk.json",
+      "apps",
+      "infra",
+      "tests",
+      "docs/architecture.md",
+      "harness/rules"
+    ]
+  },
+  "implementation": {
+    "timeoutMs": 600000,
+    "maxRepairAttempts": 2
+  }
+}

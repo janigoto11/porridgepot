@@ -1,0 +1,76 @@
+# PR-pohjainen kehitysketju
+
+## Viisi workflow'ta
+
+1. **Plan**: main-push valitsee muuttuneet numeroidut `specs/NNNN-nimi.md`-tiedostot. Claude Code tuottaa tehtävät. Harness validoi JSONin ja luo siitä suomenkielisen Markdown-kuvauksen. Molemmat tallennetaan `plans/NNNN-<lähtöcommit>.json/.md`-tiedostoihin. PR: `plan/NNNN-<lähtöcommit>` → `main`.
+2. **Implement**: plan-PR:n merge aloittaa toteutuksen haarassa `implement/<plan-PR-numero>`. JSON ja Markdown tarkistetaan vastaaviksi. Lähtökoodin on oltava sama kuin suunnittelussa (muiden planien lisääminen sallitaan). Tehtävät ajetaan riippuvuusjärjestyksessä. Jokaisella on allowedPaths, omistaja ja hyväksymiskriteerit. Agentti palauttaa tiedostosisällöt; harness validoi polut, muotoilee ja commitoi ne. Build/lint/test/synth ja erillinen Claude-katselmointi edeltävät PR:n avausta.
+3. **CI**: vain käsin käynnistettävät deterministiset tarkistukset. Pushit, PR:t, Plan ja Implement eivät käynnistä CI:tä. Implement ajaa omat tarkistuksensa ennen julkaisua.
+4. **Deploy to AWS**: implement-PR:n merge käynnistää main-haaran dispatch-ajon. Tarkistusten jälkeen OIDC-kirjautuminen ja kahden stackin oikea AWS-deploy. Automaattisen ajon commitin täytyy vastata nykyistä mainia. Käsin voi julkaista nykyisen mainin tyhjillä syötteillä.
+5. **Destroy demo**: erikseen vahvistettava poisto molemmille stackeille ja sovellusdatalle. [AWS-asetukset ja käyttöohje](aws-demo.md).
+
+Plan-PR:n voi lukea GitHubin Files changed -näkymässä. Markdown on JSONin deterministinen esitys: katselmoija ja toteuttaja näkevät samat tehtävät. Raportit ja tarkistustulokset jäävät Actions-artefakteiksi (7 päivää) ja PR:ssä on linkki ajoon.
+
+## Frontendin ja dokumentaation automerge
+
+Kaikkien todellisten muutospolkujen täytyy alkaa `apps/web/` tai `docs/`. Pelkät frontend-muutokset, pelkät dokumentaatiomuutokset ja näiden yhdistelmät kelpaavat. Repon juuren README.md ja tests/-hakemisto eivät kuulu sallittuun rajaukseen. Myös poistot ja siirron molemmat puolet huomioidaan. Tyhjä muutos ei kelpaa. Determinististen tarkistusten ja AI-review'n on onnistuttava samalle toteutuscommitille. Toteutus-PR avataan aina.
+
+Jos main on yhä toteutuksen lähtöcommitissa, automaatio tekee vain fast-forward-pushin mainiin. GitHub tunnistaa PR:n commitit yhdistetyiksi. Rinnakkainen main-muutos estää pushin; muutoksia ei ylikirjoiteta. Automaatio käynnistää deploy-preview'n erikseen, koska GITHUB_TOKEN-push ei käynnistä tavallista push-workflow'ta. GitHubin maksullista Auto-merge-ominaisuutta ei käytetä.
+
+Jos muutos koskee muitakin hakemistoja tai main on edennyt, PR jää ihmisen yhdistettäväksi. Virhe pysäyttää ajon. Uusi speksiversio tuottaa uuden plan-PR:n; vanha plan ei kelpaa, jos speksi tai lähtökoodi muuttui. Vanhojen PR:ien sulkeminen jää käyttäjälle. Samasta planista ei luoda useita toteutus-PR:iä. Epäonnistunut API-toiminto saattaa jättää haaran/PR:n: tarkasta se ennen uusinta-ajoa. Jos automerge onnistui mutta dispatch epäonnistui, käynnistä Deploy to AWS käsin antamalla yhdistetty commit ja toteutus-PR:n numero.
+
+## GitHub-asetukset
+
+- Repo voi olla private ja tili Free. Environmentteja tai haarasuojauksia ei edellytetä.
+- Settings → Actions → General → Workflow permissions: salli **Allow GitHub Actions to create and approve pull requests**. Workflow-kohtaiset oikeudet on määritelty YAMLissa; Implement tarvitsee actions: write -oikeuden Deploy to AWS -käynnistykseen.
+- Lisää myöhemmin repository secretiin `CLAUDE_CODE_OAUTH_TOKEN`. Token luodaan Claude Coden `claude setup-token` -komennolla. Älä laita tokenia tiedostoihin, PR:ään tai chattiin.
+- Workflows asentavat lukitun Claude Code CLI -version 2.1.277. Planner, toteuttaja, korjaaja ja katselmoija käyttävät samaa CLI-adapteria ja `opus`-mallialiasia. Alias voidaan korvata täsmällisellä mallilla harness/config.jsonissa.
+- Aiempi Anthropic API -adapteri on säilytetty vaihtoehtona plannerille. OAuth-token ei ole ANTHROPIC_API_KEY. Nykyiset workflow't välittävät vain OAuth-tokenin.
+- CI käynnistetään vain Actions → CI → Run workflow -toiminnolla. Valitse haara ja anna sen nykyinen täysi commit-SHA. CI ei kuulu automaattiseen demoketjuun.
+
+## Rajat ja kehittäminen
+
+Tämä on pieniä muutoksia varten rajattu ensimmäinen toteutus. Agentti saa enintään 250 KB kontekstin, kolme mallivuoroa ja vaihekohtaisen aikarajan kutsua kohti. Enintään kahdeksan tehtävää ajetaan sarjassa. CLI toimii ilman työkaluja tai MCP:tä erillisessä tilapäishakemistossa; se saa vain harnessin välittämän tekstikontekstin. Deterministisen tarkistuksen epäonnistuessa tehdään enintään kaksi rajattua korjauskierrosta.
+
+Toteuttaja voi muuttaa vain apps/, infra/, tests/ ja docs/-tiedostoja planin allowedPaths-rajojen sisällä. Harnessin, workflow'iden, speksien, planien ja riippuvuuksien muuttaminen tehdään tässä versiossa käsin. Tämä estää myös agenttia muuttamasta omia porttejaan. Agentin tuottamaa sovelluskoodia suoritetaan build/test-vaiheessa tavallisella GitHub-runnerilla: tämä ei ole vihamielisen koodin hiekkalaatikko.
+
+AI-review ei takaa virheettömyyttä. Free/private-tilillä repo-omistaja voi ohittaa työnkulun suoralla pushilla; hyväksyntämalli on harnessin toteuttama käytäntö, ei GitHubin pakottama haarasuojaus.
+
+Historialliset ai:dry-run- ja harness:review-komennot säilyvät aiemman vastaanottodemon testaamiseen. Uusi implement-workflow käyttää omaa oikean koodidiffin katselmointia. Erillinen tuotantoympäristö on edelleen pois käytöstä; tämä julkaisee vain poistettavan demon.
+
+## Ensimmäinen demo
+
+Kun workflow't on commitoitu mainiin ja token lisätty, tee uusi numeroitu speksi, esimerkiksi `specs/0003-heading.md`, joka pyytää vain yhden nykyisen sivutekstin muuttamista. Pyydä rajaamaan tehtävän allowedPaths arvoon apps/web. Pushaa, katselmoi plan-PR ja mergeä. Seuraa Implement-ajoa, toteutus-PR:n automergeä ja Deploy to AWS -ajoa ja sen Summaryssa näkyvää sovellusosoitetta. AWS-asetukset on tehtävä ensin.
+
+Lähteet: [Claude Code CLI](https://code.claude.com/docs/en/cli-reference), [GitHub-triggerit](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow).
+
+OAuth-tunnistautuminen ei toimi Claude Coden --bare-tilassa. Adapteri käyttää siksi tavallista print-tilaa erillisellä tilapäisellä HOME- ja CLAUDE_CONFIG_DIR-hakemistolla, tyhjillä setting-sources-asetuksilla sekä estetyillä hookeilla ja työkaluilla. Virheistä raportoidaan vain turvallinen luokka tai HTTP-status, ei raakaa mallivastausta tai tokenia.
+
+## CI-ajon tarkka versio
+
+CI varmistaa, että käsin annetun commit-SHA:n arvo vastaa valitun haaran dispatch-SHA:ta, ja checkout käyttää tätä muuttumatonta SHA:ta. Jos haara ehti liikkua, ajo pysähtyy. CI tarkistaa haaran version, ei PR:n virtuaalista merge-committia.
+
+Käsin käynnistettävä CI ei kutsu Claudea. Implementin oma check + AI-review toimii edelleen automergen porttina. Deploy to AWS ajaa myös omat tarkistuksensa. CI-workflow säilyy repossa ja Actions-listassa myöhempää käyttöä varten.
+
+## Toteutuksen aikarajat ja virhetilanteet
+
+`harness/config.json`-tiedoston `implementation.timeoutMs` määrää toteuttajan kutsukohtaisen aikarajan (oletus 600000 ms eli 10 minuuttia, sallittu 1–900 sekuntia). Plannerin timeoutMs ja katselmoinnin kolmen minuutin oletus ovat erillisiä. Implement-jobin kokonaisraja on edelleen 45 minuuttia, joten pitkien tehtävien yhteiskesto voi saavuttaa sen ennen yksittäisten rajojen summaa.
+
+Lokissa näkyy tehtävän id ja käytettävä aikaraja. `.ai/implementation-progress.json` sisältää tehtävien aloitukset, valmistumiset tai virheen ja keston. Raportti sisältyy implementation-evidence-artefaktiin myös kutsun epäonnistuessa. Se ei sisällä tunnuksia tai mallin raakaa vastausta. Mallikutsun virhettä tai aikakatkaisua ei yritetä automaattisesti uudelleen. Deterministisen tarkistuksen virhe voi käynnistää alla kuvatun korjauskutsun. Raportti ei ole automaattinen jatkopiste.
+
+Vanhan GitHub-ajon Re-run käyttää vanhan commitin koodia ja aikarajaa. Kun korjaus on mainissa, nykyinen tiukka lähtöcommit-tarkistus edellyttää uuden planin generointia nykyisestä mainista (Plan → Run workflow → sama speksipolku) ja sen PR:n mergeä. Uudelleensuunnittelu käyttää mallipalvelua; älä mergeä vanhaa, korjausta edeltävää plania uudestaan.
+
+## Rajatut korjauskierrokset ja lähdekoodin talteenotto
+
+Implement käyttää `tools/check-implementation.mjs`-ohjainta: ensin `npm run check`, sitten tarvittaessa Claude-korjaus ja koko tarkistus uudestaan. `implementation.maxRepairAttempts` on oletuksena 2 (sallittu 0–2; 0 poistaa korjaukset). Onnistunut ensimmäinen tarkistus ei kutsu mallia. Korjaaja saa hyväksytyn planin, nykyisen lähdekoodin, porttiraportin ja lokin viimeiset 64000 merkkiä. Se käyttää toteuttajan mallia ja aikarajaa. Sallitut polut ovat planin tehtävien yhdistelmä; harnessin tai tarkistussääntöjen muuttaminen ei ole sallittua. Jokainen korjaus commitoidaan ennen uutta tarkistusta. AI-review ja julkaisu alkavat vasta kaikkien porttien läpäisyn jälkeen.
+
+Korjauskutsut kuluttavat Claude-kiintiötä. Mallivirhe, tyhjä korjaus tai kielletty tiedostopolku pysäyttää ajon. Tarkistuksen prosessivirhettä tai 10 minuutin aikakatkaisua ei lähetetä korjaajalle. Jobin 45 minuutin kokonaisraja säilyy. Tarkistusprosessi ei saa Claude- tai GitHub-tokenia ympäristömuuttujana.
+
+`implementation-evidence-*`-artefakti sisältää `check-0.log`-alkuiset tarkistuslokit, kierroskohtaiset `gates-*.json`-raportit ja `repair-progress.json`-tapahtumat. Erillinen aina ajettava tallennusvaihe säilyttää myös epäonnistuessa `implementation.patch`-muutokset (apps/infra/tests/docs, myös keskeneräiset seuratut muutokset), uusien vielä seuraamattomien tiedostojen sisällöt `untracked/`-hakemistossa sekä lähtöcommitin `source-state.json`-tiedostossa. Säilytys on 7 päivää. Runnerin pakkopysäytys voi estää artefaktin tallennuksen.
+
+Palautus tutkittavaksi: luo erillinen checkout `source-state.json`-tiedoston baseCommitista, sovella `git apply implementation.patch` ja kopioi mahdollinen `untracked/`-sisältö samoihin suhteellisiin polkuihin. Tämä palauttaa lähdekoodin, ei commit-historiaa eikä automaattisesti jatkuvaa workflow-ajoa.
+
+## AI-katselmoinnin hyväksyntä
+
+Katselmointiraportti erottaa estävät virheet (`blockingFindings`) ja ei-estävät huomiot (`observations`). Hyväksyntä vaatii `verdict: "pass"` ja tyhjän `blockingFindings`-listan. Huomiot säilyvät raportissa eivätkä estä julkaisua. Katselmointivaihe ja PR:n julkaisuvaihe käyttävät samaa skeeman, hyväksynnän ja lähtö-/toteutuscommitin tarkistavaa funktiota. `fail` tai yksikin estävä havainto pysäyttää etenemisen. Lokissa näkyy päätös ja havaintojen lukumäärät; sisältö löytyy artefaktin `implementation-review.json`-tiedostosta.
+
+Vanhan `findings`-muodon raportteja ei hyväksytä automaattisesti: palautettu toteutus tarvitsee uuden katselmoinnin uudessa muodossa. Tämä muutos ei lisää AI-review-havaintojen automaattista korjauskierrosta; nykyinen korjaussilmukka käsittelee determinististen tarkistusten virheitä.

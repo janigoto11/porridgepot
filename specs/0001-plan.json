@@ -1,0 +1,35 @@
+[
+  {
+    "id": "frontend",
+    "owner": "apps/web",
+    "description": "Verify the login form, accessible errors, session restoration, Hello World view and logout against the baseline specification.",
+    "spec": "specs/0001-baseline.md",
+    "allowedPaths": ["apps/web"],
+    "acceptanceCriteria": [
+      "Verify the login form, accessible errors, session restoration, Hello World view and logout against the baseline specification."
+    ],
+    "dependsOn": []
+  },
+  {
+    "id": "backend",
+    "owner": "apps/api",
+    "description": "Verify authentication, hashed passwords, opaque sessions, expiry and logout against the baseline specification.",
+    "spec": "specs/0001-baseline.md",
+    "allowedPaths": ["apps/api"],
+    "acceptanceCriteria": [
+      "Verify authentication, hashed passwords, opaque sessions, expiry and logout against the baseline specification."
+    ],
+    "dependsOn": []
+  },
+  {
+    "id": "infrastructure",
+    "owner": "infra",
+    "description": "Verify private S3, CloudFront routing, API Gateway, Lambda and DynamoDB resources against the baseline specification.",
+    "spec": "specs/0001-baseline.md",
+    "allowedPaths": ["infra"],
+    "acceptanceCriteria": [
+      "Verify private S3, CloudFront routing, API Gateway, Lambda and DynamoDB resources against the baseline specification."
+    ],
+    "dependsOn": []
+  }
+]

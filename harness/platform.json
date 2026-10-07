@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "baseline": {
+    "language": "JavaScript ESM",
+    "runtime": "Node.js 22",
+    "frontend": "React / Vite",
+    "infrastructure": "AWS CDK"
+  },
+  "requiredPaths": ["apps/web", "apps/api", "infra", "specs"],
+  "forbiddenDependencies": [],
+  "forbiddenImports": [],
+  "sourceRoots": ["apps", "infra", "tools", "harness"]
+}
