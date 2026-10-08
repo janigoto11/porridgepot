@@ -14,4 +14,3 @@ We want to show the build info in the footer of our Porridge Pot's website
 - All changes must stay within apps/web/
 - Generate the build metadata in apps/web/vite.config.js
 - No modification of backend or infrastructure should be required
-
