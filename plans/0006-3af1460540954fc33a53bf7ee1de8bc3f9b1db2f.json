@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "id": "0006",
+  "spec": "specs/0006-build-info.md",
+  "specDigest": "e2e82ff08c8e57df88f163ab656a71567a1ac6ab55fb63194a09ed68b23e100d",
+  "baseCommit": "3af1460540954fc33a53bf7ee1de8bc3f9b1db2f",
+  "planner": {
+    "provider": "claude-code",
+    "model": "opus"
+  },
+  "tasks": [
+    {
+      "id": "build-metadata",
+      "owner": "apps/web/vite.config.js",
+      "description": "Luo frontendin käännöksen aikana rakennustiedot Viten konfiguraatiossa: käännöksen aloitusaika muodossa 'dd.MM.yyyy HH:mm:ss' (24 tunnin kello) ja käännettävän Git-commitin lyhyt hash (7 ensimmäistä merkkiä). Tiedot lasketaan kerran konfiguraation latautuessa ja välitetään selainkoodiin Viten define-korvauksella globaalina vakiona __BUILD_INFO__, jonka arvo on merkkijonomuotoinen JSON-objekti kentillä buildTime ja commit. Git-hash luetaan paikallisesta repositoriosta (esim. node:child_process ja 'git rev-parse --short=7 HEAD'); jos komento epäonnistuu tai Git ei ole käytettävissä, käytetään turvallista varatekstiä eikä käännös kaadu. Säilytä nykyinen root-, build- ja server-konfiguraatio ennallaan.",
+      "spec": "specs/0006-build-info.md",
+      "allowedPaths": [
+        "apps/web/vite.config.js"
+      ],
+      "acceptanceCriteria": [
+        "apps/web/vite.config.js määrittelee define-asetuksessa globaalin __BUILD_INFO__-vakion, jonka arvo sisältää kentät buildTime ja commit.",
+        "buildTime muodostetaan käännöksen aloitushetkestä muodossa 'dd.MM.yyyy HH:mm:ss', jossa HH on 24 tunnin kello ja päivä, kuukausi, tunti, minuutti ja sekunti on nollatäytetty kahteen merkkiin.",
+        "commit on käännettävän Git-commitin tunnisteen 7 ensimmäistä merkkiä.",
+        "Jos Git-komento epäonnistuu tai sitä ei voi suorittaa, __BUILD_INFO__ saa commit-kentälle varatekstin eikä konfiguraation lataus heitä virhettä.",
+        "Rakennustiedot lasketaan vain kertaalleen konfiguraation latautuessa, eikä nykyisiä root-, build- tai server-asetuksia muuteta.",
+        "Muutokset rajautuvat tiedostoon apps/web/vite.config.js."
+      ],
+      "dependsOn": []
+    },
+    {
+      "id": "footer-build-info",
+      "owner": "apps/web/src/main.jsx",
+      "description": "Lisää sovelluksen alatunnisteeseen paikanvaraaja rakennustiedoille ja näytä siinä käännöksen aikana korvatut arvot: käännöksen aloitusaika muodossa 'dd.MM.yyyy HH:mm:ss' sekä käännetyn Git-commitin lyhyt hash (7 merkkiä). Lue arvot käännöksessä korvattavasta globaalista __BUILD_INFO__-vakiosta turvallisesti niin, että arvon puuttuessa tai sen ollessa virheellinen alatunniste näyttää selkeän varatekstin eikä sovellus kaadu. Säilytä nykyinen alatunnisteen teksti 'Yksi idea. Yksi askel kerrallaan.' ja lisää rakennustiedot sen yhteyteen; tarvittaessa täydennä alatunnisteen tyylit style.css-tiedostossa.",
+      "spec": "specs/0006-build-info.md",
+      "allowedPaths": [
+        "apps/web/src/main.jsx",
+        "apps/web/src/style.css"
+      ],
+      "acceptanceCriteria": [
+        "Alatunniste sisältää rakennustiedoille oman paikanvaraajan, jonka sisältö tulee käännöksessä korvatusta __BUILD_INFO__-vakiosta.",
+        "Alatunnisteessa näkyy käännöksen aloitusaika muodossa 'dd.MM.yyyy HH:mm:ss' (24 tunnin kello).",
+        "Alatunnisteessa näkyy käännetyn commitin 7 merkin lyhyt hash.",
+        "Jos __BUILD_INFO__ puuttuu tai on virheellistä muotoa, alatunniste näyttää varatekstin eikä sovelluksen renderöinti kaadu.",
+        "Nykyinen alatunnisteen teksti 'Yksi idea. Yksi askel kerrallaan.' säilyy.",
+        "Muutokset rajautuvat tiedostoihin apps/web/src/main.jsx ja apps/web/src/style.css, eikä backendiin tai infrastruktuuriin tehdä muutoksia."
+      ],
+      "dependsOn": [
+        "build-metadata"
+      ]
+    }
+  ]
+}
