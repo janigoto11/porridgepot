@@ -173,8 +173,20 @@ button:disabled {
   color: #992e2e;
 }
 footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px 16px;
   font-size: 12px;
   color: #63766c;
+}
+.footer-tagline {
+  font-weight: 600;
+}
+.build-info {
+  color: #7b8c82;
+  font-variant-numeric: tabular-nums;
 }
 section.wide {
   max-width: 760px;

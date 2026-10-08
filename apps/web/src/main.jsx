@@ -10,6 +10,41 @@ const TABS = [
   { id: "lists", label: "Omat ostoslistat" },
 ];
 
+// Shown when the build never injected usable metadata (for example in an
+// unbundled environment or after a malformed replacement).
+const BUILD_INFO_FALLBACK = "Rakennustiedot eivät ole saatavilla";
+const COMMIT_LENGTH = 7;
+
+// __BUILD_INFO__ is a JSON string that apps/web/vite.config.js substitutes at
+// build time. Reading it through typeof keeps an unreplaced constant harmless,
+// and every unexpected shape degrades to the fallback text instead of throwing.
+function readBuildInfo() {
+  /* global __BUILD_INFO__ */
+  const raw = typeof __BUILD_INFO__ === "string" ? __BUILD_INFO__ : "";
+  if (raw.trim() === "") return null;
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) return null;
+  const { buildTime, commit } = parsed;
+  if (typeof buildTime !== "string" || typeof commit !== "string") return null;
+  const time = buildTime.trim();
+  const hash = commit.trim();
+  if (time === "" || hash === "") return null;
+  // A real hash is shortened to seven characters; a textual fallback stays whole.
+  const shortCommit = /^[0-9a-f]+$/i.test(hash) ? hash.slice(0, COMMIT_LENGTH) : hash;
+  return { buildTime: time, commit: shortCommit };
+}
+
+// Resolved once when the module loads: the values are constants of this build.
+const buildInfo = readBuildInfo();
+const buildInfoText = buildInfo
+  ? `Käännetty ${buildInfo.buildTime} · commit ${buildInfo.commit}`
+  : BUILD_INFO_FALLBACK;
+
 function Tabs({ active, onSelect }) {
   return (
     <div className="tabs" role="tablist" aria-label="Näkymät">
@@ -188,7 +223,12 @@ function App() {
           </p>
         )}
       </section>
-      <footer>Yksi idea. Yksi askel kerrallaan.</footer>
+      <footer>
+        <span className="footer-tagline">Yksi idea. Yksi askel kerrallaan.</span>
+        <span className="build-info" data-testid="build-info">
+          {buildInfoText}
+        </span>
+      </footer>
     </main>
   );
 }
